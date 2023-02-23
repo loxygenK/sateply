@@ -1,6 +1,8 @@
+pub mod entity;
+
 use std::{time::Duration, path::PathBuf, env};
 
-use ggez::{event::{EventHandler, self}, GameError, conf::{Conf, WindowMode}, ContextBuilder, graphics::{self, Color}, glam::Vec2, timer, GameResult};
+use ggez::{event::{EventHandler, self}, GameError, conf::{Conf, WindowMode}, ContextBuilder, graphics::{self, Color, Rect}, glam::{Vec2, vec2}, timer, GameResult};
 
 struct GameState {
     dt: Duration,
@@ -43,11 +45,39 @@ impl EventHandler<GameError> for GameState {
             graphics::DrawParam::from(Vec2::new(10.0, 40.0)).color(Color::WHITE)
         );
 
-
         canvas.draw(
             &self.satelite_svg,
             graphics::DrawParam::from(Vec2::new(100.0, 100.0)).color(Color::WHITE).scale(Vec2::new(0.5, 0.5))
         );
+
+        // let canvas_image = graphics::Image::new_canvas_image(ctx, ctx.gfx.surface_format(), 320, 320, 1);
+        let mut canvas_image = graphics::ScreenImage::new(ctx, None, 1.0, 1.0, 1);
+
+        {
+            let canvas_image = canvas_image.image(ctx);
+            let mut img_canvas = graphics::Canvas::from_image(
+                ctx,
+                canvas_image,
+                graphics::Color::from((255, 255, 255, 128)),
+            );
+
+            img_canvas.draw(
+                graphics::Text::new(format!("Frame: {}", self.frame)).set_scale(256.0),
+                graphics::DrawParam::from(vec2(0.0, 0.0) + vec2(15., 50.))
+                    .color(Color::from((0, 0, 0, 255))),
+            );
+            img_canvas.finish(ctx)?;
+        }
+
+        let canvas_image = canvas_image.image(ctx);
+        canvas.draw(
+            &canvas_image,
+            graphics::DrawParam::new()
+                .src(Rect::new(0.0, 0.0, 100.0 / 1920.0, 100.0 / 1080.0))   
+                .dest(vec2(100.0, 100.0))
+                .color(Color::from((255, 255, 255, 128)))
+        );
+
 
         canvas.finish(ctx)?;
 
