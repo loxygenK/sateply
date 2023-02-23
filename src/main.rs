@@ -2,12 +2,14 @@ pub mod entity;
 
 use std::{time::Duration, path::PathBuf, env};
 
+use entity::{Entity, satelite::Satelite};
 use ggez::{event::{EventHandler, self}, GameError, conf::{Conf, WindowMode}, ContextBuilder, graphics::{self, Color, Rect}, glam::{Vec2, vec2}, timer, GameResult};
 
-struct GameState {
+pub struct GameState {
     dt: Duration,
     frame: usize,
-    satelite_svg: graphics::Image
+    entities: Vec<Box<dyn Entity>>,
+    pub satelite_svg: graphics::Image
 }
 
 impl GameState {
@@ -18,9 +20,14 @@ impl GameState {
             Self {
                 dt: Duration::default(),
                 frame: 0,
+                entities: Vec::new(),
                 satelite_svg
             }
         )
+    }
+
+    pub fn add_entity(&mut self, entity: Box<dyn Entity>) {
+        self.entities.push(entity);
     }
 }
 
@@ -28,6 +35,12 @@ impl EventHandler<GameError> for GameState {
     fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), GameError> {
         while ctx.time.check_update_time(60) {
             self.frame += 1;
+
+            self.entities
+                .iter_mut()
+                .for_each(|entity| {
+                    entity.update().expect("Update should be success");
+                });
         }
         Ok(())
     }
@@ -45,39 +58,27 @@ impl EventHandler<GameError> for GameState {
             graphics::DrawParam::from(Vec2::new(10.0, 40.0)).color(Color::WHITE)
         );
 
-        canvas.draw(
-            &self.satelite_svg,
-            graphics::DrawParam::from(Vec2::new(100.0, 100.0)).color(Color::WHITE).scale(Vec2::new(0.5, 0.5))
-        );
-
-        // let canvas_image = graphics::Image::new_canvas_image(ctx, ctx.gfx.surface_format(), 320, 320, 1);
-        let mut canvas_image = graphics::ScreenImage::new(ctx, None, 1.0, 1.0, 1);
-
-        {
-            let canvas_image = canvas_image.image(ctx);
-            let mut img_canvas = graphics::Canvas::from_image(
+        for entity in self.entities.iter() {
+            let mut canvas_image = graphics::ScreenImage::new(ctx, None, 1.0, 1.0, 1);
+            let img_canvas = graphics::Canvas::from_image(
                 ctx,
-                canvas_image,
-                graphics::Color::from((255, 255, 255, 128)),
+                canvas_image.image(ctx),
+                graphics::Color::from_rgba(0, 0, 0, 0) 
             );
 
-            img_canvas.draw(
-                graphics::Text::new(format!("Frame: {}", self.frame)).set_scale(256.0),
-                graphics::DrawParam::from(vec2(0.0, 0.0) + vec2(15., 50.))
-                    .color(Color::from((0, 0, 0, 255))),
-            );
+            let size = entity.draw(&mut canvas, self)?;
+
             img_canvas.finish(ctx)?;
+
+            canvas.draw(
+                &canvas_image.image(ctx),
+                graphics::DrawParam::new()
+                    .src(Rect::new(0.0, 0.0, size.x / 1920.0, size.y / 1080.0))   
+                    .dest(vec2(100.0, 100.0))
+                    .color(Color::from((255, 255, 255, 128)))
+            );
         }
-
-        let canvas_image = canvas_image.image(ctx);
-        canvas.draw(
-            &canvas_image,
-            graphics::DrawParam::new()
-                .src(Rect::new(0.0, 0.0, 100.0 / 1920.0, 100.0 / 1080.0))   
-                .dest(vec2(100.0, 100.0))
-                .color(Color::from((255, 255, 255, 128)))
-        );
-
+        // let canvas_image = graphics::Image::new_canvas_image(ctx, ctx.gfx.surface_format(), 320, 320, 1);
 
         canvas.finish(ctx)?;
 
@@ -106,7 +107,8 @@ fn main() {
         .build()
         .unwrap();
 
-    let state = GameState::new(&mut ctx).unwrap();
+    let mut state = GameState::new(&mut ctx).unwrap();
+    state.add_entity(Box::new(Satelite { x: 960, y: 960 }));
 
     event::run(ctx, event_loop, state);
 }
