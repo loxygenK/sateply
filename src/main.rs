@@ -1,13 +1,11 @@
 pub mod entity;
 
-use std::{time::Duration, path::PathBuf, env};
+use std::{path::PathBuf, env};
 
 use entity::{Entity, satelite::Satelite};
-use ggez::{event::{EventHandler, self}, GameError, conf::{Conf, WindowMode}, ContextBuilder, graphics::{self, Color, Rect}, glam::{Vec2, vec2}, timer, GameResult};
+use ggez::{event::{EventHandler, self}, GameError, conf::{Conf, WindowMode}, ContextBuilder, graphics::{self, Color, Rect}, glam::vec2, timer, GameResult};
 
 pub struct GameState {
-    dt: Duration,
-    frame: usize,
     entities: Vec<Box<dyn Entity>>,
     pub satelite_svg: graphics::Image
 }
@@ -18,8 +16,6 @@ impl GameState {
 
         Ok(
             Self {
-                dt: Duration::default(),
-                frame: 0,
                 entities: Vec::new(),
                 satelite_svg
             }
@@ -34,8 +30,6 @@ impl GameState {
 impl EventHandler<GameError> for GameState {
     fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), GameError> {
         while ctx.time.check_update_time(60) {
-            self.frame += 1;
-
             self.entities
                 .iter_mut()
                 .for_each(|entity| {
@@ -47,16 +41,6 @@ impl EventHandler<GameError> for GameState {
 
     fn draw(&mut self, ctx: &mut ggez::Context) -> Result<(), GameError> {
         let mut canvas = graphics::Canvas::from_frame(ctx, Color::from([0.0, 0.0, 0.2, 1.0]));
-
-        canvas.draw(
-            graphics::Text::new("Hello, world!").set_scale(32.0),
-            graphics::DrawParam::from(Vec2::new(10.0, 10.0)).color(Color::WHITE)
-        );
-
-        canvas.draw(
-            graphics::Text::new(format!("Frame: {}", self.frame)).set_scale(24.0),
-            graphics::DrawParam::from(Vec2::new(10.0, 40.0)).color(Color::WHITE)
-        );
 
         for entity in self.entities.iter() {
             let mut canvas_image = graphics::ScreenImage::new(ctx, None, 1.0, 1.0, 1);
@@ -78,7 +62,6 @@ impl EventHandler<GameError> for GameState {
                     .color(Color::from((255, 255, 255, 128)))
             );
         }
-        // let canvas_image = graphics::Image::new_canvas_image(ctx, ctx.gfx.surface_format(), 320, 320, 1);
 
         canvas.finish(ctx)?;
 

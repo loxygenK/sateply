@@ -2,7 +2,7 @@ use ggez::{graphics::{self, Color}, glam::Vec2};
 
 use crate::GameState;
 
-use super::Entity;
+use super::{Entity, EntityType};
 
 pub struct Satelite {
     pub x: usize,
@@ -29,6 +29,10 @@ impl Entity for Satelite {
         );
 
         Ok((640.0, 480.0).into())
+    }
+
+    fn get_type(&self) -> EntityType {
+        EntityType::Satelite
     }
 }
 
