@@ -5,37 +5,58 @@ use rand::{thread_rng, RngCore};
 
 use crate::GameState;
 
+use self::satelite::Satelite;
+
 pub mod satelite;
 
 pub trait Entity {
     fn update(&mut self) -> GameResult;
     fn draw(&self, canvas: &mut Canvas, state: &GameState) -> GameResult<Vec2>;
-    fn get_type(&self) -> EntityType;
+    fn typed(self) -> TypedEntity;
 }
 
-pub enum EntityType {
-    Satelite
+pub enum TypedEntity {
+    Satelite(Satelite)
+}
+
+impl TypedEntity {
+    pub fn inner(&self) -> &impl Entity {
+        match self {
+            TypedEntity::Satelite(inner) => inner
+        }
+    }
+
+    pub fn inner_mut(&mut self) -> &mut impl Entity {
+        match self {
+            TypedEntity::Satelite(inner) => inner
+        }
+    }
 }
 
 pub type EntityMapKey = u32;
 
-pub struct EntityMap(HashMap<EntityMapKey, Box<dyn Entity>>);
+#[derive(Default)]
+pub struct EntityMap(HashMap<EntityMapKey, TypedEntity>);
 
 pub struct EntityMapEntry<'a> {
     pub key: EntityMapKey,
-    pub entity: &'a dyn Entity
+    pub entity: &'a TypedEntity
 }
 
 impl EntityMap {
-    pub fn inner(&self) -> &HashMap<EntityMapKey, Box<dyn Entity>> {
+    pub fn inner(&self) -> &HashMap<EntityMapKey, TypedEntity> {
         &self.0
     }
 
-    pub fn iter_entity(&self) -> impl Iterator<Item = &Box<dyn Entity>> {
+    pub fn iter_entity(&self) -> impl Iterator<Item = &TypedEntity> {
         self.0.values()
     }
 
-    pub fn insert(&mut self, entity: Box<dyn Entity>) -> EntityMapEntry {
+    pub fn iter_mut_entity(&mut self) -> impl Iterator<Item = &mut TypedEntity> {
+        self.0.values_mut()
+    }
+
+    pub fn insert(&mut self, entity: TypedEntity) -> EntityMapEntry {
         let mut rng = thread_rng();
 
         let mut key = rng.next_u32();
@@ -46,7 +67,36 @@ impl EntityMap {
 
         EntityMapEntry {
             key,
-            entity: self.0.get(&key).unwrap().as_ref()
+            entity: self.0.get(&key).unwrap()
         }
     }
+}
+
+#[macro_export]
+macro_rules! extract_by_entity {
+    ($map: expr, $type: ident) => {
+        {
+            $map.iter_entity()
+                .flat_map(|entity| {
+                    if let $crate::entity::TypedEntity::$type(inner) = entity {
+                        Some(inner)
+                    } else {
+                        None
+                    }
+                })
+        }
+    };
+
+    (mut $map: expr, $type: ident) => {
+        {
+            $map.iter_mut_entity()
+                .flat_map(|entity| {
+                    if let $crate::entity::TypedEntity::$type(inner) = entity {
+                        Some(inner)
+                    } else {
+                        None
+                    }
+                })
+        }
+    };
 }
