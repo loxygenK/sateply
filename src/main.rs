@@ -7,7 +7,7 @@ use std::{path::PathBuf, env};
 
 use entity::{satelite::Satelite, Entity};
 use ggez::{conf::{Conf, WindowMode}, event, ContextBuilder};
-use system::GameState;
+use system::GameSystem;
 
 fn main() {
     let resource_dir = if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
@@ -29,8 +29,8 @@ fn main() {
         .build()
         .unwrap();
 
-    let mut state = GameState::new(&mut ctx).unwrap();
-    state.entities.insert(Satelite { x: 960, y: 960 }.typed());
+    let mut system = GameSystem::new(&mut ctx).unwrap();
+    system.state.entities.insert(Satelite { x: 10.0, y: 10.0 }.typed());
 
-    event::run(ctx, event_loop, state);
+    event::run(ctx, event_loop, system);
 }

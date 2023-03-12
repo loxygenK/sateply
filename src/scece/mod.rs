@@ -1,4 +1,4 @@
-use crate::{system::GameState, extract_by_entity, utils::ExpectOnlyOneExt, entity::Entity};
+use crate::{system::{state::GameState}, extract_by_entity, utils::ExpectOnlyOneExt, entity::{Entity, satelite::Satelite}};
 
 pub trait Scene {
     fn prepare(&self, state: &mut GameState);
@@ -20,11 +20,7 @@ impl Scenes {
 pub struct DefaultScene;
 impl Scene for DefaultScene {
     fn prepare(&self, state: &mut GameState) {
-        let mut satelite = extract_by_entity!(mut state.entities, Satelite)
-            .unwrap_only_one();
-
-        satelite.x = 640;
-        satelite.y = 480;
+        state.entities.insert(Satelite { x: 640.0, y: 480.0 }.typed());
     }
 
     fn tick(&self, state: &mut GameState) {

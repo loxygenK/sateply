@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use ggez::{GameResult, graphics::Canvas, glam::Vec2};
+use ggez::{GameResult, graphics::{Canvas, Rect}, glam::Vec2};
 use rand::{thread_rng, RngCore};
 
-use crate::GameState;
+use crate::system::state::GameState;
 
 use self::satelite::Satelite;
 
@@ -11,10 +11,11 @@ pub mod satelite;
 
 pub trait Entity {
     fn update(&mut self) -> GameResult;
-    fn draw(&self, canvas: &mut Canvas, state: &GameState) -> GameResult<Vec2>;
+    fn draw(&self, canvas: &mut Canvas, state: &GameState) -> GameResult<Rect>;
     fn typed(self) -> TypedEntity;
 }
 
+#[derive(Debug)]
 pub enum TypedEntity {
     Satelite(Satelite)
 }
@@ -35,7 +36,7 @@ impl TypedEntity {
 
 pub type EntityMapKey = u32;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EntityMap(HashMap<EntityMapKey, TypedEntity>);
 
 pub struct EntityMapEntry<'a> {

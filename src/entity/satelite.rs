@@ -1,12 +1,13 @@
-use ggez::{graphics::{self, Color}, glam::Vec2};
+use ggez::{graphics::{self, Color, Rect}, glam::Vec2};
 
-use crate::GameState;
+use crate::system::state::GameState;
 
 use super::{Entity, TypedEntity};
 
+#[derive(Debug)]
 pub struct Satelite {
-    pub x: usize,
-    pub y: usize
+    pub x: f32,
+    pub y: f32
 }
 
 impl Entity for Satelite {
@@ -20,7 +21,7 @@ impl Entity for Satelite {
         &self,
         canvas: &mut graphics::Canvas,
         state: &GameState
-    ) -> ggez::GameResult<Vec2> {
+    ) -> ggez::GameResult<Rect> {
         canvas.draw(
             &state.satelite_svg,
             graphics::DrawParam::from(Vec2::new(0.0, 0.0))
@@ -28,7 +29,7 @@ impl Entity for Satelite {
                 .scale(Vec2::new(0.5, 0.5))
         );
 
-        Ok((640.0, 480.0).into())
+        Ok(Rect::new(self.x, self.y, state.satelite_svg.width() as f32, state.satelite_svg.height() as f32))
     }
 
     fn typed(self) -> TypedEntity {
@@ -38,6 +39,6 @@ impl Entity for Satelite {
 
 impl Satelite {
     pub fn advance(&mut self) {
-        self.y -= 1;
+        self.y -= 1.0;
     }
 }
