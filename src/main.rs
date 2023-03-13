@@ -2,10 +2,10 @@ pub mod entity;
 pub mod system;
 pub mod scece;
 pub mod utils;
+pub mod theory;
 
 use std::{path::PathBuf, env};
 
-use entity::{satelite::Satelite, Entity};
 use ggez::{conf::{Conf, WindowMode}, event, ContextBuilder};
 use system::GameSystem;
 
@@ -29,8 +29,6 @@ fn main() {
         .build()
         .unwrap();
 
-    let mut system = GameSystem::new(&mut ctx).unwrap();
-    system.state.entities.insert(Satelite { x: 10.0, y: 10.0 }.typed());
-
+    let system = GameSystem::new(&mut ctx).unwrap();
     event::run(ctx, event_loop, system);
 }

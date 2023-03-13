@@ -1,18 +1,26 @@
-use crate::{system::{state::GameState}, extract_by_entity, utils::ExpectOnlyOneExt, entity::{Entity, satelite::Satelite}};
+use crate::{system::{state::GameState}, extract_by_entity, utils::ExpectOnlyOneExt, entity::{Entity, satelite::Satelite}, theory::physics::Physics};
+
+pub mod game;
 
 pub trait Scene {
     fn prepare(&self, state: &mut GameState);
-    fn tick(&self, state: &mut GameState);
+    fn tick(&self, state: &mut GameState) -> Option<SceneTickAction>;
+}
+
+pub enum SceneTickAction {
+    ChangeScene(Scenes)
 }
 
 pub enum Scenes {
-    DefaultScene(DefaultScene)
+    DefaultScene(DefaultScene),
+    GameScene(game::GameScene),
 }
 
 impl Scenes {
-    pub fn inner(&self) -> &impl Scene {
+    pub fn inner(&self) -> &dyn Scene {
         match self {
-            Scenes::DefaultScene(inner) => inner
+            Scenes::DefaultScene(inner) => inner,
+            Scenes::GameScene(inner) => inner
         }
     }
 }
@@ -20,14 +28,12 @@ impl Scenes {
 pub struct DefaultScene;
 impl Scene for DefaultScene {
     fn prepare(&self, state: &mut GameState) {
-        state.entities.insert(Satelite { x: 640.0, y: 480.0 }.typed());
+        state.entities.insert(Satelite::new().typed());
     }
 
-    fn tick(&self, state: &mut GameState) {
-        state.entities
-            .iter_mut_entity()
-            .for_each(|entity| {
-                entity.inner_mut().update().expect("Update should be success");
-            });
+    fn tick(&self, _state: &mut GameState) -> Option<SceneTickAction> {
+        Some(SceneTickAction::ChangeScene(
+            Scenes::GameScene(game::GameScene)
+        ))
     }
 }

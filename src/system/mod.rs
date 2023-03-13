@@ -1,10 +1,10 @@
 pub mod state;
 
-use ggez::{event::EventHandler, GameError, graphics::{self, Color, Rect}, glam::vec2, timer, GameResult};
+use ggez::{event::EventHandler, GameError, graphics::{self, Color, Rect, StrokeOptions}, glam::{vec2, Vec2Swizzles}, timer, GameResult, winit::platform::unix::x11::ffi::KeyPress, mint::{self, Point2}};
 
-use crate::{entity::Entity, scece::{Scene, Scenes, DefaultScene}};
+use crate::{entity::Entity, scece::{Scene, Scenes, DefaultScene, SceneTickAction}, theory::geometry::Vector};
 
-use self::state::GameState;
+use self::state::{GameState, KeyPressTiming};
 
 pub struct GameSystem {
     pub state: GameState,
@@ -25,8 +25,15 @@ impl GameSystem {
 impl EventHandler<GameError> for GameSystem {
     fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), GameError> {
         while ctx.time.check_update_time(60) {
-            self.scene.inner().tick(&mut self.state);
+            let Some(action) = self.scene.inner().tick(&mut self.state) else { continue; };
+            match action {
+                SceneTickAction::ChangeScene(scene) => {
+                    self.scene = scene;
+                    self.scene.inner().prepare(&mut self.state);
+                }
+            }
         }
+
         Ok(())
     }
 
@@ -41,22 +48,55 @@ impl EventHandler<GameError> for GameSystem {
                 graphics::Color::from_rgba(0, 0, 0, 0) 
             );
 
-            let area = entity.inner().draw(&mut img_canvas, &self.state)?;
+            let draw = entity.inner().draw(&mut img_canvas, &self.state)?;
 
             img_canvas.finish(ctx)?;
 
+            let offset = vec2(draw.size.x / 2.0, draw.size.y / 2.0);
             canvas.draw(
                 &canvas_image.image(ctx),
                 graphics::DrawParam::new()
-                    .src(Rect::new(0.0, 0.0, area.w / 1920.0, area.y / 1080.0))   
-                    .dest(vec2(area.x, area.y))
-                    .color(Color::from((255, 255, 255, 128)))
+                    .src(Rect::new(0.0, 0.0, draw.size.x / 1920.0, draw.size.y / 1080.0))   
+                    .dest(draw.position + offset)
+                    .rotation(draw.angle)
+                    .offset(Point2 { x: 0.5, y: 0.5 })
+                    // .color(Color::from((255, 255, 255, 128)))
             );
+
+            canvas.draw(
+                &graphics::Mesh::new_rectangle(
+                    &ctx.gfx,
+                    graphics::DrawMode::Stroke(StrokeOptions::default()),
+                    Rect::new(draw.position.x, draw.position.y, draw.size.x, draw.size.y),
+                    Color::RED
+                )?,
+                graphics::DrawParam::default()
+            );
+
         }
 
-        canvas.finish(ctx)?;
+        canvas.finish(ctx)
+    }
 
-        timer::yield_now();
+    fn key_down_event(
+        &mut self,
+        _ctx: &mut ggez::Context,
+        input: ggez::input::keyboard::KeyInput,
+        repeated: bool,
+    ) -> Result<(), GameError> {
+        self.state.pressed_key.push((input, KeyPressTiming::Pressed { repeated }));
+
+        Ok(())
+    }
+
+    fn key_up_event(
+        &mut self,
+        _ctx: &mut ggez::Context,
+        input: ggez::input::keyboard::KeyInput
+    ) -> Result<(), GameError> {
+        self.state.pressed_key
+            .retain(|(key, _)| key.keycode != input.keycode && key.mods != input.mods);
+
         Ok(())
     }
 }
