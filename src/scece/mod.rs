@@ -1,10 +1,12 @@
-use crate::{system::{state::GameState}, extract_by_entity, utils::ExpectOnlyOneExt, entity::{Entity, satelite::Satelite}, theory::physics::Physics};
+use ggez::{input::keyboard::KeyInput, Context};
+
+use crate::{system::{state::GameState, keyinput_list::KeyTypeMatchMap}, extract_by_entity, utils::ExpectOnlyOneExt, entity::{Entity, satelite::Satelite}, theory::physics::Physics};
 
 pub mod game;
 
 pub trait Scene {
     fn prepare(&self, state: &mut GameState);
-    fn tick(&self, state: &mut GameState) -> Option<SceneTickAction>;
+    fn tick(&self, ctx: &Context, state: &mut GameState) -> Option<SceneTickAction>;
 }
 
 pub enum SceneTickAction {
@@ -31,7 +33,7 @@ impl Scene for DefaultScene {
         state.entities.insert(Satelite::new().typed());
     }
 
-    fn tick(&self, _state: &mut GameState) -> Option<SceneTickAction> {
+    fn tick(&self, _ctx: &Context, _state: &mut GameState) -> Option<SceneTickAction> {
         Some(SceneTickAction::ChangeScene(
             Scenes::GameScene(game::GameScene)
         ))

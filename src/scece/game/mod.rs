@@ -1,6 +1,13 @@
+use ggez::Context;
+
 use crate::{extract_by_entity, utils::ExpectOnlyOneExt, system::state::GameState};
 
+use self::input::Control;
+
 use super::Scene;
+
+pub mod input;
+pub mod satelite;
 
 pub struct GameScene;
 impl Scene for GameScene {
@@ -12,9 +19,12 @@ impl Scene for GameScene {
         satelite.physics.transform.angle = 0.0;
     }
 
-    fn tick(&self, state: &mut GameState) -> Option<super::SceneTickAction> {
-        state.entities.update_all_entity().unwrap();
+    fn tick(&self, ctx: &Context, state: &mut GameState) -> Option<super::SceneTickAction> {
+        let enabled_control = Control::get_binding().get_active_controls(ctx);
 
+        dbg!(&enabled_control);
+
+        state.entities.update_all_entity().unwrap();
         None
     }
 }

@@ -1,8 +1,9 @@
 pub mod state;
+pub mod keyinput_list;
 
-use ggez::{event::EventHandler, GameError, graphics::{self, Color, Rect, StrokeOptions}, glam::{vec2, Vec2Swizzles}, timer, GameResult, winit::platform::unix::x11::ffi::KeyPress, mint::{self, Point2}};
+use ggez::{event::EventHandler, GameError, graphics::{self, Color, Rect, StrokeOptions}, glam::vec2, GameResult, mint::Point2};
 
-use crate::{entity::Entity, scece::{Scene, Scenes, DefaultScene, SceneTickAction}, theory::geometry::Vector};
+use crate::{entity::Entity, scece::{Scenes, DefaultScene, SceneTickAction}};
 
 use self::state::{GameState, KeyPressTiming};
 
@@ -25,7 +26,7 @@ impl GameSystem {
 impl EventHandler<GameError> for GameSystem {
     fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), GameError> {
         while ctx.time.check_update_time(60) {
-            let Some(action) = self.scene.inner().tick(&mut self.state) else { continue; };
+            let Some(action) = self.scene.inner().tick(ctx, &mut self.state) else { continue; };
             match action {
                 SceneTickAction::ChangeScene(scene) => {
                     self.scene = scene;
@@ -76,27 +77,5 @@ impl EventHandler<GameError> for GameSystem {
         }
 
         canvas.finish(ctx)
-    }
-
-    fn key_down_event(
-        &mut self,
-        _ctx: &mut ggez::Context,
-        input: ggez::input::keyboard::KeyInput,
-        repeated: bool,
-    ) -> Result<(), GameError> {
-        self.state.pressed_key.push((input, KeyPressTiming::Pressed { repeated }));
-
-        Ok(())
-    }
-
-    fn key_up_event(
-        &mut self,
-        _ctx: &mut ggez::Context,
-        input: ggez::input::keyboard::KeyInput
-    ) -> Result<(), GameError> {
-        self.state.pressed_key
-            .retain(|(key, _)| key.keycode != input.keycode && key.mods != input.mods);
-
-        Ok(())
     }
 }
