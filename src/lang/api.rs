@@ -18,12 +18,13 @@ impl APIError {
     }
 }
 
-pub struct API<'a, T: ProgramClient> {
-    pub client: &'a mut T 
+pub struct API<'client, T: ProgramClient>(pub &'client mut T);
+impl<'client, T: ProgramClient> API<'client, T> {
+    pub fn boost(&mut self, location: String, power: f32) -> APIResult<()> {
+        boost(self.0, location, power)
+    }
 }
 
-impl<'a, T: ProgramClient> API<'a, T> {
-    pub fn boost(&mut self, location: String, power: f32) -> APIResult<()> {
-        self.client.boost(&location, power).map_err(|err| APIError::new("boosting", err))
-    }
+pub fn boost<T: ProgramClient>(client: &mut T, location: String, power: f32) -> APIResult<()> {
+    client.boost(&location, power).map_err(|err| APIError::new("boosting", err))
 }

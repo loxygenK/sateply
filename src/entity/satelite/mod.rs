@@ -1,8 +1,8 @@
 use std::{collections::HashMap, str::FromStr};
 
-use ggez::{graphics::{self, Color}, glam::Vec2};
+use ggez::{graphics::{self, Color}, glam::{Vec2, vec2}};
 
-use crate::{system::state::GameState, theory::physics::Physics, lang::{ProgramClient, ClientError}};
+use crate::{system::state::GameState, theory::{physics::Physics, geometry::Vector}, lang::{ProgramClient, ClientError}};
 use super::{Entity, TypedEntity, DrawInstruction};
 
 #[derive(Debug)]
@@ -31,7 +31,16 @@ impl Satelite {
 
 impl Entity for Satelite {
     fn update(&mut self) -> ggez::GameResult {
+        self.physics.apply_force(
+            Vector(0.0, 0.001) * *self.booster.get(&SateliteBoosters::Front).unwrap()
+        );
+        self.physics.apply_force(
+            Vector(0.0, -0.001) * *self.booster.get(&SateliteBoosters::Back).unwrap()
+        );
+
         self.physics.tick();
+
+        dbg!(&self.physics);
 
         Ok(())
     }
@@ -74,7 +83,7 @@ impl ProgramClient for Satelite {
             });
         };
 
-        if (0.0..=1.0).contains(&power) {
+        if !(0.0..=1.0).contains(&power) {
             return Err(ClientError::ValidationFailure{
                 performing: "boosting".to_string(),
                 part: "power".to_string(),

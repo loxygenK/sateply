@@ -35,8 +35,8 @@ impl Add for Vector {
 
 impl MulAssign<f32> for Vector {
     fn mul_assign(&mut self, rhs: f32) {
-        self.0 += rhs;
-        self.1 += rhs;
+        self.0 *= rhs;
+        self.1 *= rhs;
     }
 }
 

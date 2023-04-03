@@ -1,7 +1,9 @@
 use std::sync::{Arc, Mutex};
 
-use hlua::{Lua, LuaError, AnyLuaValue, Function, LuaFunction};
-use crate::{lang::api::API, entity::map};
+use rlua::{Function, prelude::*, Scope, StdLib, Table};
+use rlua::{Error, Result as LuaResult};
+
+use crate::lang::api::boost;
 
 use super::ProgramClient;
 
@@ -12,6 +14,9 @@ pub enum ExecutionError {
 
     #[error("ProgrammaticError: {0}")]
     ProgrammaticError(String),
+
+    #[error("Problem occurred with the runtime: {0}")]
+    EnvironmentalError(String),
 
     #[error("DynamicError: {0}")]
     DynamicError(String),
@@ -26,30 +31,53 @@ pub enum ExecutionError {
     InvalidEntrypointReturnType
 }
 
-pub fn register_api<'lua, 'client: 'lua>(lua: &mut Lua<'lua>, client: &'client mut impl ProgramClient) {
-    let api = API { client };
-    let api = Arc::new(Mutex::new(api));
+pub fn register_api<'global, 'scope, T>(
+    global: &Table<'global>,
+    scope: &Scope<'global, 'scope>,
+    client: &'scope mut T
+) -> LuaResult<()>
+where T: ProgramClient + Send, 'global: 'scope
+{
+    let client = Arc::new(Mutex::new(client));
 
-    let api_boost = api.clone();
-    lua.set(
+    let client_1 = client.clone();
+    global.set(
         "api_boost",
-        hlua::function2(move |location, power| api_boost.lock().unwrap().boost(location,power).map_err(|err| format!("{}", err)))
-    );
+        scope.create_function(move |_, (location, power)| {
+            // api_boost.lock().unwrap().boost(location, power).expect("TODO: panic message");
+            boost(*client_1.lock().unwrap(), location, power).expect("");
+            Ok(())
+        })?
+    )?;
+
+    Ok(())
 }
 
-pub fn execute(client: &mut impl ProgramClient, code: &str) -> Result<(), ExecutionError> {
-    let mut lua_runtime = Lua::new();
+pub fn execute<T>(client: &mut T, code: &str) -> Result<(), ExecutionError>
+where
+    T: ProgramClient + Send
+{
+    let lua_runtime = Lua::new_with(StdLib::BASE);
 
-    register_api(&mut lua_runtime, client);
+    let reported = lua_runtime.context(|ctx| {
+        let global = ctx.globals();
 
-    lua_runtime.open_base();
-    lua_runtime.execute(code).map_err(map_execute_result)?;
+        ctx.scope(|scope| {
+            register_api(&global, scope, client).map_err(map_execute_result)?;
 
-    let Some(mut main) = lua_runtime.get::<LuaFunction<_>, _>("main") else {
-        return Err(ExecutionError::EntrypointNotFound);
-    };
+            ctx.load(code).eval::<()>().map_err(map_execute_result)?;
 
-    let reported = main.call::<String>().map_err(map_execute_result)?;
+            if !global.contains_key("main").map_err(map_execute_result)? {
+                return Err(ExecutionError::EntrypointNotFound);
+            }
+
+            let main: Function = global.get("main").map_err(map_execute_result)?;
+
+            let reported: String = main.call("").map_err(map_execute_result)?;
+
+            Ok(reported)
+        })
+    })?;
 
     if reported.is_empty() {
         Ok(())
@@ -59,11 +87,53 @@ pub fn execute(client: &mut impl ProgramClient, code: &str) -> Result<(), Execut
 }
 
 fn map_execute_result(error: LuaError) -> ExecutionError {
+    #[allow(unreachable_patterns)]
     match error {
-        LuaError::SyntaxError(err) => ExecutionError::SyntaxError(err),
-        LuaError::ExecutionError(err) => ExecutionError::ProgrammaticError(err),
-        LuaError::WrongType => ExecutionError::InvalidEntrypointReturnType,
-        LuaError::ReadError(err) => ExecutionError::DynamicError(err.to_string()),
+        Error::SyntaxError { message, .. } => ExecutionError::SyntaxError(message),
+        Error::RuntimeError(msg) => ExecutionError::DynamicError(msg),
+        Error::MemoryError(msg) => ExecutionError::EnvironmentalError(msg),
+        Error::RecursiveMutCallback => ExecutionError::ProgrammaticError("Mutable callback ran twice".to_string()),
+        Error::CallbackDestructed => ExecutionError::EnvironmentalError("Callback is destructed".to_string()),
+        Error::StackError => ExecutionError::EnvironmentalError("No more space to place stack!".to_string()),
+        Error::BindError => ExecutionError::EnvironmentalError("Too many arguments to bind".to_string()),
+        Error::ToLuaConversionError { from, to, message } => {
+            ExecutionError::DynamicError(
+                format!(
+                    "Cannot convert the value from the runtime to the firmware(lua) ('{}' => '{}'): {}",
+                    from,
+                    to,
+                    message.unwrap_or("Error message not present".to_string())
+                )
+            )
+        }
+        Error::FromLuaConversionError { from, to, message } => {
+            ExecutionError::DynamicError(
+                format!(
+                    "Cannot convert the value from the firmware(lua) to the runtime ('{}' => '{}'): {}",
+                    from,
+                    to,
+                    message.unwrap_or("Error message not present".to_string())
+                )
+            )
+        }
+        Error::CoroutineInactive => ExecutionError::EnvironmentalError("should be unreachable".to_string()),
+
+        // These errors seem to be occur when the Rust side using `AnyUserData` and
+        // somehow the lua (?) program violated the rust's important rule
+        Error::UserDataTypeMismatch => ExecutionError::EnvironmentalError("should be unreachable".to_string()),
+        Error::UserDataBorrowError => ExecutionError::EnvironmentalError("should be unreachable".to_string()),
+        Error::UserDataBorrowMutError => ExecutionError::EnvironmentalError("should be unreachable".to_string()),
+
+        Error::MismatchedRegistryKey => ExecutionError::EnvironmentalError("should be unreachable (state contaminated)".to_string()),
+        Error::CallbackError { traceback, cause } => {
+            ExecutionError::DynamicError(format!("API call has failed: {cause:#?}\n{traceback}"))
+        },
+        Error::ExternalError(cause) => {
+            ExecutionError::DynamicError(format!("API call has failed due to the external cause: {cause}"))
+        },
+        _ => {
+            ExecutionError::EnvironmentalError("Unknown error occurred!!".to_string())
+        }
     }
 }
 
@@ -84,7 +154,7 @@ mod tests {
             name.starts_with("booster_")
         }
 
-        fn boost(&mut self, location: &str, power: f32) -> Result<(), crate::lang::ClientError> {
+        fn boost(&mut self, location: &str, power: f32) -> Result<(), ClientError> {
             if !self.is_valid_booster(location) {
                 return Err(ClientError::ValidationFailure {
                     performing: "boost".to_owned(),
@@ -132,6 +202,7 @@ mod tests {
             r#"
             function main()
                 api_boost("booster_A", 0.5);
+                api_boost_2("booster_B", 0.3);
                 return ''
             end
             "#
@@ -139,5 +210,6 @@ mod tests {
 
         assert_eq!(result, Ok(()));
         assert_eq!(client.booster.get("booster_A"), Some(&0.5));
+        assert_eq!(client.booster.get("booster_B"), Some(&0.3));
     }
 }
