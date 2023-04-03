@@ -3,6 +3,7 @@ pub mod system;
 pub mod scece;
 pub mod utils;
 pub mod theory;
+pub mod lang;
 
 use std::{path::PathBuf, env};
 
