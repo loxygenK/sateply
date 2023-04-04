@@ -1,9 +1,11 @@
 use ggez::{graphics, GameResult};
 
 use crate::entity::map::EntityMap;
+use crate::theory::physics::PhysicalWorld;
 
 pub struct GameState {
     pub entities: EntityMap,
+    pub physical_world: PhysicalWorld,
     pub satelite_svg: graphics::Image,
 }
 
@@ -21,6 +23,7 @@ impl GameState {
         Ok(
             Self {
                 entities: EntityMap::default(),
+                physical_world: PhysicalWorld::new(),
                 satelite_svg,
             }
         )

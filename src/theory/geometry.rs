@@ -1,13 +1,13 @@
 use std::ops::{Add, Mul, AddAssign, MulAssign};
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Transform {
-    pub location: Vector,
+    pub location: (f32, f32),
     pub angle: f32
 }
 
 impl Transform {
-    pub fn new(location: Vector, angle: f32) -> Self {
+    pub fn new(location: (f32, f32), angle: f32) -> Self {
         Self { location, angle }
     }
 }

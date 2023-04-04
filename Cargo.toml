@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 ggez = "0.9.0-rc0"
 rand = "0.8.5"
+rapier2d = { version = "0.17.2", features = ["simd-nightly"] }
 rlua = "0.19.4"
 thiserror = "1.0.40"
 

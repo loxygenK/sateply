@@ -3,11 +3,15 @@ use std::{collections::HashMap, str::FromStr};
 use ggez::{graphics::{self, Color}, glam::{Vec2, vec2}};
 
 use crate::{system::state::GameState, theory::{physics::Physics, geometry::Vector}, lang::{ProgramClient, ClientError}};
+use crate::entity::RigidBody;
+use crate::theory::geometry::Transform;
+use crate::theory::physics::{PhysicsController, RigidBodyProperty};
 use super::{Entity, TypedEntity, DrawInstruction};
 
 #[derive(Debug)]
 pub struct Satelite {
-    pub physics: Physics,
+    pub physics: Option<Physics>,
+    pub transform: Transform,
     pub booster: HashMap<SateliteBoosters, f32>,
 }
 
@@ -20,7 +24,8 @@ pub enum SateliteBoosters {
 impl Satelite {
     pub fn new() -> Self {
         Self {
-            physics: Physics::default(),
+            physics: None,
+            transform: Transform::default(),
             booster: HashMap::from([
                 (SateliteBoosters::Front, 0.0),
                 (SateliteBoosters::Back, 0.0),
@@ -31,17 +36,6 @@ impl Satelite {
 
 impl Entity for Satelite {
     fn update(&mut self) -> ggez::GameResult {
-        self.physics.apply_force(
-            Vector(0.0, 0.001) * *self.booster.get(&SateliteBoosters::Front).unwrap()
-        );
-        self.physics.apply_force(
-            Vector(0.0, -0.001) * *self.booster.get(&SateliteBoosters::Back).unwrap()
-        );
-
-        self.physics.tick();
-
-        dbg!(&self.physics);
-
         Ok(())
     }
 
@@ -58,14 +52,40 @@ impl Entity for Satelite {
         );
 
         Ok(DrawInstruction {
-            position: self.physics.transform.location.into(),
-            angle: self.physics.transform.angle,
+            position: self.transform.location.into(),
+            angle: self.transform.angle,
             size: ((state.satelite_svg.width() as f32 / 2.0), (state.satelite_svg.height() as f32 / 2.0)).into(),
         })
     }
 
     fn typed(self) -> TypedEntity {
         TypedEntity::Satelite(self)
+    }
+}
+
+impl RigidBody for Satelite {
+    fn get_property(&self) -> RigidBodyProperty {
+        RigidBodyProperty {
+            mass: 1000.0,
+            size: (1.0, 1.0),
+            initial_transform: self.transform.clone(),
+        }
+    }
+
+    fn register_physics(&mut self, physics: Physics) {
+        self.physics = Some(physics);
+    }
+
+    fn get_mut_physics(&mut self) -> &mut Physics {
+        self.physics.as_mut().unwrap()
+    }
+
+    fn update_physics(&mut self, controller: &mut PhysicsController) {
+        controller.apply_force(Some((0.5, -1.0)), (0.0, 1.0));
+    }
+
+    fn report_transform(&mut self, transform: Transform) {
+        self.transform = transform;
     }
 }
 

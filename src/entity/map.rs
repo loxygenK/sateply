@@ -2,6 +2,9 @@ use std::collections::HashMap;
 
 use ggez::GameResult;
 use rand::{thread_rng, RngCore};
+use rapier2d::crossbeam::channel::internal::SelectHandle;
+use crate::theory::physics::{PhysicalWorld, Physics, PhysicsController};
+use crate::entity::RigidBody;
 
 use super::{TypedEntity, Entity};
 
@@ -28,9 +31,19 @@ impl EntityMap {
         self.0.values_mut()
     }
 
-    pub fn update_all_entity(&mut self) -> GameResult {
+    pub fn update_all_entity(&mut self, physical_world: &mut PhysicalWorld) -> GameResult {
         self.iter_mut_entity()
-            .try_for_each(|entity| { entity.inner_mut().update() })
+            .try_for_each(|entity| {
+                let Some(physics) = entity.as_mut_rigidbody() else {
+                    return entity.inner_mut().update();
+                };
+
+                let mut controller = physical_world.get(physics.get_mut_physics()).unwrap();
+
+                physics.update_physics(&mut controller);
+
+                Ok(())
+            })
     }
 
     pub fn insert(&mut self, entity: TypedEntity) -> EntityMapEntry {
