@@ -1,6 +1,9 @@
+use ggez::winit::platform::unix::x11::ffi::XIMCaretStyle::XIMIsInvisible;
 use rapier2d::na::{Point2, Vector2};
 use rapier2d::prelude::*;
+use rlua::MetaMethod::Mul;
 use crate::scece::game::input::Control;
+use crate::theory::geometry::Vector;
 use super::geometry::{Transform};
 
 #[derive(Debug)]
@@ -31,13 +34,47 @@ impl<'a> PhysicsController<'a> {
             None => self.0.add_force(tuple_to_vec(vector), true)
         }
     }
+
+    pub fn to_transform(&self) -> Transform {
+        Transform {
+            location: (
+                self.0.translation().x,
+                self.0.translation().y,
+            ),
+            angle: self.0.rotation().angle(),
+        }
+    }
 }
 
-pub struct PhysicalWorld(RigidBodySet);
+pub struct PhysicalWorld {
+    rigidbody_set: RigidBodySet,
+    physics_pipeline: PhysicsPipeline,
+    gravity: Vector2<Real>,
+    integration_parameters: IntegrationParameters,
+    island_manager: IslandManager,
+    broad_phase: BroadPhase,
+    narrow_phase: NarrowPhase,
+    collider_set: ColliderSet,
+    impulse_joint_set: ImpulseJointSet,
+    multibody_joint_set: MultibodyJointSet,
+    ccd_solver: CCDSolver,
+}
 
 impl PhysicalWorld {
     pub fn new() -> Self {
-        PhysicalWorld(RigidBodySet::default())
+        PhysicalWorld {
+            rigidbody_set: RigidBodySet::default(),
+            physics_pipeline: PhysicsPipeline::new(),
+            gravity: vector![0.0, 0.0],
+            integration_parameters: IntegrationParameters::default(),
+            island_manager: IslandManager::new(),
+            broad_phase: BroadPhase::new(),
+            narrow_phase: NarrowPhase::new(),
+            collider_set: ColliderSet::new(),
+            impulse_joint_set: ImpulseJointSet::new(),
+            multibody_joint_set: MultibodyJointSet::new(),
+            ccd_solver: CCDSolver::new(),
+        }
     }
 
     pub fn register(&mut self, property: RigidBodyProperty) -> Physics {
@@ -47,11 +84,29 @@ impl PhysicalWorld {
             .additional_mass(property.mass)
             .build();
 
-        Physics(self.0.insert(rigidbody))
+        Physics(self.rigidbody_set.insert(rigidbody))
+    }
+
+    pub fn tick(&mut self) {
+        self.physics_pipeline.step(
+            &self.gravity,
+            &self.integration_parameters,
+            &mut self.island_manager,
+            &mut self.broad_phase,
+            &mut self.narrow_phase,
+            &mut self.rigidbody_set,
+            &mut self.collider_set,
+            &mut self.impulse_joint_set,
+            &mut self.multibody_joint_set,
+            &mut self.ccd_solver,
+            None,
+            &(),
+            &()
+        );
     }
 
     pub fn get(&mut self, physics: &mut Physics) -> Option<PhysicsController> {
-        self.0.get_mut(physics.0).map(PhysicsController)
+        self.rigidbody_set.get_mut(physics.0).map(PhysicsController)
     }
 }
 

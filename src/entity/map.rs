@@ -43,7 +43,23 @@ impl EntityMap {
                 physics.update_physics(&mut controller);
 
                 Ok(())
-            })
+            })?;
+
+        physical_world.tick();
+
+        self.iter_mut_entity()
+            .for_each(|entity| {
+                let Some(physics) = entity.as_mut_rigidbody() else {
+                    return;
+                };
+
+                let controller = physical_world.get(physics.get_mut_physics()).unwrap();
+                let transform = controller.to_transform();
+
+                physics.report_transform(transform);
+            });
+
+        Ok(())
     }
 
     pub fn insert(&mut self, entity: TypedEntity) -> EntityMapEntry {

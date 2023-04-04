@@ -44,17 +44,17 @@ impl Entity for Satelite {
         canvas: &mut graphics::Canvas,
         state: &GameState
     ) -> ggez::GameResult<DrawInstruction> {
-        canvas.draw(
-            &state.satelite_svg,
-            graphics::DrawParam::from(Vec2::new(0.0, 0.0))
-                .color(Color::WHITE)
-                .scale(Vec2::new(0.5, 0.5))
-        );
+        // canvas.draw(
+        //     &state.satelite_svg,
+        //     graphics::DrawParam::from(Vec2::new(0.0, 0.0))
+        //         .color(Color::WHITE)
+        //         .scale(Vec2::new(0.5, 0.5))
+        // );
 
         Ok(DrawInstruction {
             position: self.transform.location.into(),
             angle: self.transform.angle,
-            size: ((state.satelite_svg.width() as f32 / 2.0), (state.satelite_svg.height() as f32 / 2.0)).into(),
+            size: (100.0, 30.0).into() // ((state.satelite_svg.width() as f32 / 2.0), (state.satelite_svg.height() as f32 / 2.0)).into(),
         })
     }
 
