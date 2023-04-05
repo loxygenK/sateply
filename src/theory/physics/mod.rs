@@ -1,17 +1,17 @@
-use std::f32::consts::PI;
+use super::geometry::Transform;
+use crate::scece::game::input::Control;
+use crate::theory::geometry::Vector;
 use ggez::winit::platform::unix::x11::ffi::XIMCaretStyle::XIMIsInvisible;
 use rapier2d::na::{Point2, Rotation2, Vector2};
 use rapier2d::prelude::*;
 use rlua::MetaMethod::Mul;
-use crate::scece::game::input::Control;
-use crate::theory::geometry::Vector;
-use super::geometry::{Transform};
+use std::f32::consts::PI;
 
 #[derive(Debug)]
 pub struct RigidBodyProperty {
     pub mass: f32,
     pub size: (f32, f32),
-    pub initial_transform: Transform
+    pub initial_transform: Transform,
 }
 
 #[derive(Debug)]
@@ -27,12 +27,11 @@ impl<'a> PhysicsController<'a> {
 
     pub fn apply_force(&mut self, at: Option<(f32, f32)>, vector: (f32, f32)) {
         match at {
-            Some(at) => self.0.add_force_at_point(
-                tuple_to_vec(vector),
-                tuple_to_vec(at).into(),
-                true
-            ),
-            None => self.0.add_force(tuple_to_vec(vector), true)
+            Some(at) => {
+                self.0
+                    .add_force_at_point(tuple_to_vec(vector), tuple_to_vec(at).into(), true)
+            }
+            None => self.0.add_force(tuple_to_vec(vector), true),
         }
     }
 
@@ -46,10 +45,7 @@ impl<'a> PhysicsController<'a> {
 
     pub fn to_transform(&self) -> Transform {
         Transform {
-            location: (
-                self.0.translation().x,
-                self.0.translation().y,
-            ),
+            location: (self.0.translation().x, self.0.translation().y),
             angle: self.0.rotation().angle(),
         }
     }
@@ -93,15 +89,13 @@ impl PhysicalWorld {
             .additional_mass(property.mass)
             .build();
 
-        let collider = ColliderBuilder::cuboid(
-            property.size.0 / 2.0,
-            property.size.1 / 2.0
-        )
-            .build();
+        let collider =
+            ColliderBuilder::cuboid(property.size.0 / 2.0, property.size.1 / 2.0).build();
 
         let handle = self.rigidbody_set.insert(rigidbody);
 
-        self.collider_set.insert_with_parent(collider, handle, &mut self.rigidbody_set);
+        self.collider_set
+            .insert_with_parent(collider, handle, &mut self.rigidbody_set);
 
         Physics(handle)
     }
@@ -120,7 +114,7 @@ impl PhysicalWorld {
             &mut self.ccd_solver,
             None,
             &(),
-            &()
+            &(),
         );
     }
 

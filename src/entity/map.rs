@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
-use ggez::{Context, GameResult, graphics};
+use crate::entity::RigidBody;
+use crate::theory::physics::{PhysicalWorld, Physics, PhysicsController};
 use ggez::graphics::ScreenImage;
+use ggez::{graphics, Context, GameResult};
 use rand::{thread_rng, RngCore};
 use rapier2d::crossbeam::channel::internal::SelectHandle;
-use crate::theory::physics::{PhysicalWorld, Physics, PhysicsController};
-use crate::entity::RigidBody;
 
-use super::{TypedEntity, Entity};
+use super::{Entity, TypedEntity};
 
 pub type EntityMapKey = u32;
 
@@ -22,7 +22,7 @@ pub struct EntityMap(HashMap<EntityMapKey, EntityMapValue>);
 
 pub struct EntityMapEntry<'a> {
     pub key: EntityMapKey,
-    pub value: &'a EntityMapValue
+    pub value: &'a EntityMapValue,
 }
 
 impl EntityMap {
@@ -65,7 +65,11 @@ impl EntityMap {
         Ok(())
     }
 
-    pub fn insert(&mut self, ctx: &Context, entity: TypedEntity) -> (&EntityMapKey, &EntityMapValue) {
+    pub fn insert(
+        &mut self,
+        ctx: &Context,
+        entity: TypedEntity,
+    ) -> (&EntityMapKey, &EntityMapValue) {
         let mut rng = thread_rng();
 
         let mut key = rng.next_u32();
@@ -76,8 +80,8 @@ impl EntityMap {
             key,
             EntityMapValue {
                 entity,
-                screen_image: graphics::ScreenImage::new(&ctx.gfx, None, 1.0, 1.0, 1)
-            }
+                screen_image: graphics::ScreenImage::new(&ctx.gfx, None, 1.0, 1.0, 1),
+            },
         );
 
         self.0.get_key_value(&key).unwrap()
@@ -86,29 +90,23 @@ impl EntityMap {
 
 #[macro_export]
 macro_rules! extract_by_entity {
-    ($map: expr, $type: ident) => {
-        {
-            $map.iter_entity()
-                .flat_map(|entity| {
-                    if let $crate::entity::TypedEntity::$type(inner) = entity {
-                        Some(inner)
-                    } else {
-                        None
-                    }
-                })
-        }
-    };
+    ($map: expr, $type: ident) => {{
+        $map.iter_entity().flat_map(|entity| {
+            if let $crate::entity::TypedEntity::$type(inner) = entity {
+                Some(inner)
+            } else {
+                None
+            }
+        })
+    }};
 
-    (mut $map: expr, $type: ident) => {
-        {
-            $map.iter_mut_entity()
-                .flat_map(|entity| {
-                    if let $crate::entity::TypedEntity::$type(inner) = entity {
-                        Some(inner)
-                    } else {
-                        None
-                    }
-                })
-        }
-    };
+    (mut $map: expr, $type: ident) => {{
+        $map.iter_mut_entity().flat_map(|entity| {
+            if let $crate::entity::TypedEntity::$type(inner) = entity {
+                Some(inner)
+            } else {
+                None
+            }
+        })
+    }};
 }

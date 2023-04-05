@@ -1,12 +1,21 @@
-pub mod state;
 pub mod keyinput_list;
+pub mod state;
 
-use std::collections::HashMap;
-use ggez::{event::EventHandler, GameError, graphics::{self, Color, Rect, StrokeOptions}, glam::vec2, GameResult, mint::Point2};
 use ggez::graphics::ScreenImage;
+use ggez::{
+    event::EventHandler,
+    glam::vec2,
+    graphics::{self, Color, Rect, StrokeOptions},
+    mint::Point2,
+    GameError, GameResult,
+};
+use std::collections::HashMap;
 
-use crate::{entity::Entity, scece::{Scenes, DefaultScene, SceneTickAction}};
 use crate::entity::map::{EntityMap, EntityMapKey, EntityMapValue};
+use crate::{
+    entity::Entity,
+    scece::{DefaultScene, SceneTickAction, Scenes},
+};
 
 use self::state::{GameState, KeyPressTiming};
 
@@ -14,7 +23,7 @@ pub struct GameSystem {
     pub entities: EntityMap,
     pub state: GameState,
     pub scene: Scenes,
-    pub images: HashMap<EntityMapKey, ScreenImage>
+    pub images: HashMap<EntityMapKey, ScreenImage>,
 }
 
 impl GameSystem {
@@ -24,7 +33,7 @@ impl GameSystem {
         let scene = Scenes::DefaultScene(DefaultScene);
         scene.inner().prepare(ctx, &mut state, &mut entities);
 
-        Ok( Self {
+        Ok(Self {
             entities,
             state,
             scene,
@@ -37,7 +46,6 @@ impl GameSystem {
     }
 }
 
-
 impl EventHandler<GameError> for GameSystem {
     fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), GameError> {
         while ctx.time.check_update_time(60) {
@@ -45,7 +53,9 @@ impl EventHandler<GameError> for GameSystem {
             match action {
                 SceneTickAction::ChangeScene(scene) => {
                     self.scene = scene;
-                    self.scene.inner().prepare(ctx, &mut self.state, &mut self.entities);
+                    self.scene
+                        .inner()
+                        .prepare(ctx, &mut self.state, &mut self.entities);
                 }
             }
         }
@@ -56,13 +66,15 @@ impl EventHandler<GameError> for GameSystem {
     fn draw(&mut self, ctx: &mut ggez::Context) -> Result<(), GameError> {
         let mut canvas = graphics::Canvas::from_frame(ctx, Color::from([0.0, 0.0, 0.2, 1.0]));
 
-        self.entities
-            .iter_mut_entity()
-            .try_for_each(|EntityMapValue { entity, ref mut screen_image }| {
+        self.entities.iter_mut_entity().try_for_each(
+            |EntityMapValue {
+                 entity,
+                 ref mut screen_image,
+             }| {
                 let mut img_canvas = graphics::Canvas::from_image(
                     ctx,
                     screen_image.image(ctx),
-                    graphics::Color::from_rgba(0, 0, 0, 0)
+                    graphics::Color::from_rgba(0, 0, 0, 0),
                 );
 
                 let draw = entity.inner().draw(&mut img_canvas, &self.state)?;
@@ -74,11 +86,15 @@ impl EventHandler<GameError> for GameSystem {
                 canvas.draw(
                     &screen_image.image(ctx),
                     graphics::DrawParam::new()
-                        .src(Rect::new(0.0, 0.0, draw.size.x / 1920.0, draw.size.y / 1080.0))
+                        .src(Rect::new(
+                            0.0,
+                            0.0,
+                            draw.size.x / 1920.0,
+                            draw.size.y / 1080.0,
+                        ))
                         .dest(draw.position + offset + offset_screen)
                         .rotation(draw.angle)
-                        .offset(Point2 { x: 0.5, y: 0.5 })
-                    // .color(Color::from((255, 255, 255, 128)))
+                        .offset(Point2 { x: 0.5, y: 0.5 }), // .color(Color::from((255, 255, 255, 128)))
                 );
 
                 canvas.draw(
@@ -86,13 +102,14 @@ impl EventHandler<GameError> for GameSystem {
                         &ctx.gfx,
                         graphics::DrawMode::Stroke(StrokeOptions::default()),
                         Rect::new(draw.position.x, draw.position.y, draw.size.x, draw.size.y),
-                        Color::RED
+                        Color::RED,
                     )?,
-                    graphics::DrawParam::from(offset_screen)
+                    graphics::DrawParam::from(offset_screen),
                 );
 
                 GameResult::Ok(())
-            })?;
+            },
+        )?;
 
         canvas.finish(ctx)
     }

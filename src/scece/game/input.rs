@@ -6,7 +6,7 @@ use crate::system::keyinput_list::{KeyTypeMatch, KeyTypeMatchMap};
 pub enum Control {
     EnableBurst,
     DisableBurst,
-    Bursting
+    Bursting,
 }
 
 impl Control {

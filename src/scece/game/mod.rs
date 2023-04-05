@@ -1,7 +1,9 @@
 use ggez::Context;
 
-use crate::{extract_by_entity, utils::ExpectOnlyOneExt, system::state::GameState, lang::exec::execute};
 use crate::entity::map::EntityMap;
+use crate::{
+    extract_by_entity, lang::exec::execute, system::state::GameState, utils::ExpectOnlyOneExt,
+};
 
 use self::input::Control;
 
@@ -16,10 +18,17 @@ impl Scene for GameScene {
         // do nothing
     }
 
-    fn tick(&self, ctx: &Context, state: &mut GameState, entity_map: &mut EntityMap) -> Option<super::SceneTickAction> {
+    fn tick(
+        &self,
+        ctx: &Context,
+        state: &mut GameState,
+        entity_map: &mut EntityMap,
+    ) -> Option<super::SceneTickAction> {
         let enabled_control = Control::get_binding().get_active_controls(ctx);
 
-        entity_map.update_all_entity(&mut state.physical_world).unwrap();
+        entity_map
+            .update_all_entity(&mut state.physical_world)
+            .unwrap();
         None
     }
 }

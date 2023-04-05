@@ -1,9 +1,9 @@
-use std::ops::{Add, Mul, AddAssign, MulAssign};
+use std::ops::{Add, AddAssign, Mul, MulAssign};
 
 #[derive(Clone, Debug, Default)]
 pub struct Transform {
     pub location: (f32, f32),
-    pub angle: f32
+    pub angle: f32,
 }
 
 impl Transform {

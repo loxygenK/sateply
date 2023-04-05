@@ -1,12 +1,20 @@
 use std::{collections::HashMap, str::FromStr};
 
-use ggez::{graphics::{self, Color}, glam::{Vec2, vec2}, Context};
+use ggez::{
+    glam::{vec2, Vec2},
+    graphics::{self, Color},
+    Context,
+};
 
-use crate::{system::state::GameState, theory::{physics::Physics, geometry::Vector}, lang::{ProgramClient, ClientError}};
+use super::{DrawInstruction, Entity, TypedEntity};
 use crate::entity::RigidBody;
 use crate::theory::geometry::Transform;
 use crate::theory::physics::{PhysicsController, RigidBodyProperty};
-use super::{Entity, TypedEntity, DrawInstruction};
+use crate::{
+    lang::{ClientError, ProgramClient},
+    system::state::GameState,
+    theory::{geometry::Vector, physics::Physics},
+};
 
 #[derive(Debug)]
 pub struct Satelite {
@@ -18,7 +26,7 @@ pub struct Satelite {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum SateliteBoosters {
     Front,
-    Back
+    Back,
 }
 
 impl Satelite {
@@ -29,7 +37,7 @@ impl Satelite {
             booster: HashMap::from([
                 (SateliteBoosters::Front, 0.0),
                 (SateliteBoosters::Back, 0.0),
-            ])
+            ]),
         }
     }
 }
@@ -42,19 +50,23 @@ impl Entity for Satelite {
     fn draw(
         &self,
         canvas: &mut graphics::Canvas,
-        state: &GameState
+        state: &GameState,
     ) -> ggez::GameResult<DrawInstruction> {
         canvas.draw(
             &state.satelite_svg,
             graphics::DrawParam::from(Vec2::new(0.0, 0.0))
                 .color(Color::WHITE)
-                .scale(Vec2::new(0.5, 0.5))
+                .scale(Vec2::new(0.5, 0.5)),
         );
 
         Ok(DrawInstruction {
             position: self.transform.location.into(),
             angle: self.transform.angle,
-            size: ((state.satelite_svg.width() as f32 / 2.0), (state.satelite_svg.height() as f32 / 2.0)).into(),
+            size: (
+                (state.satelite_svg.width() as f32 / 2.0),
+                (state.satelite_svg.height() as f32 / 2.0),
+            )
+                .into(),
         })
     }
 
@@ -86,40 +98,22 @@ impl RigidBody for Satelite {
         }
 
         // BL
-        controller.apply_force_locally(
-            relative(-0.25, 1.0),
-            (0.0, -50.0)
-        );
+        controller.apply_force_locally(relative(-0.25, 1.0), (0.0, -50.0));
 
         // BR
-        controller.apply_force_locally(
-            relative(0.25, 1.0),
-            (0.0, -50.0)
-        );
+        controller.apply_force_locally(relative(0.25, 1.0), (0.0, -50.0));
 
         // FL
-        controller.apply_force_locally(
-            relative(-0.25, -1.0),
-            (0.0, 50.0)
-        );
+        controller.apply_force_locally(relative(-0.25, -1.0), (0.0, 50.0));
 
         // FR
-        controller.apply_force_locally(
-            relative(0.25, -1.0),
-            (0.0, 50.0)
-        );
+        controller.apply_force_locally(relative(0.25, -1.0), (0.0, 50.0));
 
         // WL
-        controller.apply_force_locally(
-            relative(-0.85, 0.2),
-            (0.0, 0.0)
-        );
+        controller.apply_force_locally(relative(-0.85, 0.2), (0.0, 0.0));
 
         // WR
-        controller.apply_force_locally(
-            relative(0.85, 0.2),
-            (0.0, 0.0)
-        );
+        controller.apply_force_locally(relative(0.85, 0.2), (0.0, 0.0));
     }
 
     fn report_transform(&mut self, transform: Transform) {
@@ -142,10 +136,10 @@ impl ProgramClient for Satelite {
         };
 
         if !(0.0..=1.0).contains(&power) {
-            return Err(ClientError::ValidationFailure{
+            return Err(ClientError::ValidationFailure {
                 performing: "boosting".to_string(),
                 part: "power".to_string(),
-                reason: "power should be in between 0 - 1".to_string()
+                reason: "power should be in between 0 - 1".to_string(),
             });
         }
 
@@ -161,7 +155,7 @@ impl FromStr for SateliteBoosters {
         match s {
             "f" | "front" => Ok(Self::Front),
             "b" | "back" => Ok(Self::Back),
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }

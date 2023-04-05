@@ -1,4 +1,4 @@
-use super::{ProgramClient, ClientError};
+use super::{ClientError, ProgramClient};
 
 pub type APIResult<T> = Result<T, APIError>;
 
@@ -6,14 +6,14 @@ pub type APIResult<T> = Result<T, APIError>;
 #[error("While performing {performing}: {error}")]
 pub struct APIError {
     performing: String,
-    error: ClientError
+    error: ClientError,
 }
 
 impl APIError {
     pub fn new(performing: impl ToString, error: ClientError) -> Self {
         Self {
             performing: performing.to_string(),
-            error
+            error,
         }
     }
 }
@@ -26,5 +26,7 @@ impl<'client, T: ProgramClient> API<'client, T> {
 }
 
 pub fn boost<T: ProgramClient>(client: &mut T, location: String, power: f32) -> APIResult<()> {
-    client.boost(&location, power).map_err(|err| APIError::new("boosting", err))
+    client
+        .boost(&location, power)
+        .map_err(|err| APIError::new("boosting", err))
 }
