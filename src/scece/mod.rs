@@ -1,13 +1,14 @@
 use ggez::{input::keyboard::KeyInput, Context};
 
 use crate::{system::{state::GameState, keyinput_list::KeyTypeMatchMap}, extract_by_entity, utils::ExpectOnlyOneExt, entity::{Entity, satelite::Satelite}, theory::physics::Physics};
+use crate::entity::map::EntityMap;
 use crate::entity::RigidBody;
 
 pub mod game;
 
 pub trait Scene {
-    fn prepare(&self, state: &mut GameState);
-    fn tick(&self, ctx: &Context, state: &mut GameState) -> Option<SceneTickAction>;
+    fn prepare(&self, ctx: &Context, state: &mut GameState, entity_map: &mut EntityMap);
+    fn tick(&self, ctx: &Context, state: &mut GameState, entity_map: &mut EntityMap) -> Option<SceneTickAction>;
 }
 
 pub enum SceneTickAction {
@@ -30,17 +31,17 @@ impl Scenes {
 
 pub struct DefaultScene;
 impl Scene for DefaultScene {
-    fn prepare(&self, state: &mut GameState) {
+    fn prepare(&self, ctx: &Context, state: &mut GameState, entity_map: &mut EntityMap) {
         let mut satelite = Satelite::new();
 
         let property = satelite.get_property();
         let physics = state.physical_world.register(property);
         satelite.register_physics(physics);
 
-        state.entities.insert(satelite.typed());
+        entity_map.insert(ctx, satelite.typed());
     }
 
-    fn tick(&self, _ctx: &Context, _state: &mut GameState) -> Option<SceneTickAction> {
+    fn tick(&self, _ctx: &Context, _state: &mut GameState, entity_map: &mut EntityMap) -> Option<SceneTickAction> {
         Some(SceneTickAction::ChangeScene(
             Scenes::GameScene(game::GameScene)
         ))
