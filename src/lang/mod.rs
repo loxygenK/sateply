@@ -1,10 +1,14 @@
-pub mod exec;
 pub mod api;
+pub mod exec;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ClientError {
     #[error("Validation failure, '{part}': {reason}")]
-    ValidationFailure { performing: String, part: String, reason: String }
+    ValidationFailure {
+        performing: String,
+        part: String,
+        reason: String,
+    },
 }
 
 pub trait ProgramClient {

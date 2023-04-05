@@ -1,16 +1,29 @@
 use ggez::{input::keyboard::KeyInput, Context};
 
-use crate::{system::{state::GameState, keyinput_list::KeyTypeMatchMap}, extract_by_entity, utils::ExpectOnlyOneExt, entity::{Entity, satelite::Satelite}, theory::physics::Physics};
+use crate::entity::map::EntityMap;
+use crate::entity::RigidBody;
+use crate::{
+    entity::{satelite::Satelite, Entity},
+    extract_by_entity,
+    system::{keyinput_list::KeyTypeMatchMap, state::GameState},
+    theory::physics::Physics,
+    utils::ExpectOnlyOneExt,
+};
 
 pub mod game;
 
 pub trait Scene {
-    fn prepare(&self, state: &mut GameState);
-    fn tick(&self, ctx: &Context, state: &mut GameState) -> Option<SceneTickAction>;
+    fn prepare(&self, ctx: &Context, state: &mut GameState, entity_map: &mut EntityMap);
+    fn tick(
+        &self,
+        ctx: &Context,
+        state: &mut GameState,
+        entity_map: &mut EntityMap,
+    ) -> Option<SceneTickAction>;
 }
 
 pub enum SceneTickAction {
-    ChangeScene(Scenes)
+    ChangeScene(Scenes),
 }
 
 pub enum Scenes {
@@ -22,20 +35,31 @@ impl Scenes {
     pub fn inner(&self) -> &dyn Scene {
         match self {
             Scenes::DefaultScene(inner) => inner,
-            Scenes::GameScene(inner) => inner
+            Scenes::GameScene(inner) => inner,
         }
     }
 }
 
 pub struct DefaultScene;
 impl Scene for DefaultScene {
-    fn prepare(&self, state: &mut GameState) {
-        state.entities.insert(Satelite::new().typed());
+    fn prepare(&self, ctx: &Context, state: &mut GameState, entity_map: &mut EntityMap) {
+        let mut satelite = Satelite::new();
+
+        let property = satelite.get_property();
+        let physics = state.physical_world.register(property);
+        satelite.register_physics(physics);
+
+        entity_map.insert(ctx, satelite.typed());
     }
 
-    fn tick(&self, _ctx: &Context, _state: &mut GameState) -> Option<SceneTickAction> {
-        Some(SceneTickAction::ChangeScene(
-            Scenes::GameScene(game::GameScene)
-        ))
+    fn tick(
+        &self,
+        _ctx: &Context,
+        _state: &mut GameState,
+        entity_map: &mut EntityMap,
+    ) -> Option<SceneTickAction> {
+        Some(SceneTickAction::ChangeScene(Scenes::GameScene(
+            game::GameScene,
+        )))
     }
 }

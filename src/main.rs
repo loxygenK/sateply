@@ -1,13 +1,16 @@
 pub mod entity;
-pub mod system;
-pub mod scece;
-pub mod utils;
-pub mod theory;
 pub mod lang;
+pub mod scece;
+pub mod system;
+pub mod theory;
+pub mod utils;
 
-use std::{path::PathBuf, env};
+use std::{env, path::PathBuf};
 
-use ggez::{conf::{Conf, WindowMode}, event, ContextBuilder};
+use ggez::{
+    conf::{Conf, WindowMode},
+    event, ContextBuilder,
+};
 use system::GameSystem;
 
 fn main() {

@@ -1,6 +1,9 @@
 use ggez::Context;
 
-use crate::{extract_by_entity, utils::ExpectOnlyOneExt, system::state::GameState, lang::exec::execute};
+use crate::entity::map::EntityMap;
+use crate::{
+    extract_by_entity, lang::exec::execute, system::state::GameState, utils::ExpectOnlyOneExt,
+};
 
 use self::input::Control;
 
@@ -11,28 +14,21 @@ pub mod satelite;
 
 pub struct GameScene;
 impl Scene for GameScene {
-    fn prepare(&self, state: &mut GameState) {
-        let satelite = extract_by_entity!(mut state.entities, Satelite)
-            .unwrap_only_one();
-
-        execute(
-            satelite,
-            r#"
-            function main()
-                api_boost("b", 0.5);
-                return "";
-            end
-            "#
-        ).unwrap();
-
-        satelite.physics.transform.location = (640.0, 480.0).into();
-        satelite.physics.transform.angle = 0.0;
+    fn prepare(&self, _ctx: &Context, _state: &mut GameState, entity_map: &mut EntityMap) {
+        // do nothing
     }
 
-    fn tick(&self, ctx: &Context, state: &mut GameState) -> Option<super::SceneTickAction> {
+    fn tick(
+        &self,
+        ctx: &Context,
+        state: &mut GameState,
+        entity_map: &mut EntityMap,
+    ) -> Option<super::SceneTickAction> {
         let enabled_control = Control::get_binding().get_active_controls(ctx);
 
-        state.entities.update_all_entity().unwrap();
+        entity_map
+            .update_all_entity(&mut state.physical_world)
+            .unwrap();
         None
     }
 }

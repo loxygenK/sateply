@@ -1,9 +1,15 @@
-pub trait ExpectOnlyOneExt<T> where Self: Iterator<Item = T> {
+pub trait ExpectOnlyOneExt<T>
+where
+    Self: Iterator<Item = T>,
+{
     fn unwrap_only_one(self) -> T;
     fn expect_only_one(self, message: &str) -> T;
 }
 
-impl<T, I> ExpectOnlyOneExt<T> for I where I: Iterator<Item = T> {
+impl<T, I> ExpectOnlyOneExt<T> for I
+where
+    I: Iterator<Item = T>,
+{
     fn unwrap_only_one(mut self) -> T {
         let Some(first) = self.next() else {
             panic!("No item in the iterator");

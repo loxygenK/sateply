@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use rlua::{Function, prelude::*, Scope, StdLib, Table};
+use rlua::{prelude::*, Function, Scope, StdLib, Table};
 use rlua::{Error, Result as LuaResult};
 
 use crate::lang::api::boost;
@@ -28,15 +28,17 @@ pub enum ExecutionError {
     EntrypointNotFound,
 
     #[error("Firmware must return String")]
-    InvalidEntrypointReturnType
+    InvalidEntrypointReturnType,
 }
 
 pub fn register_api<'global, 'scope, T>(
     global: &Table<'global>,
     scope: &Scope<'global, 'scope>,
-    client: &'scope mut T
+    client: &'scope mut T,
 ) -> LuaResult<()>
-where T: ProgramClient + Send, 'global: 'scope
+where
+    T: ProgramClient + Send,
+    'global: 'scope,
 {
     let client = Arc::new(Mutex::new(client));
 
@@ -47,7 +49,7 @@ where T: ProgramClient + Send, 'global: 'scope
             // api_boost.lock().unwrap().boost(location, power).expect("TODO: panic message");
             boost(*client_1.lock().unwrap(), location, power).expect("");
             Ok(())
-        })?
+        })?,
     )?;
 
     Ok(())
@@ -55,7 +57,7 @@ where T: ProgramClient + Send, 'global: 'scope
 
 pub fn execute<T>(client: &mut T, code: &str) -> Result<(), ExecutionError>
 where
-    T: ProgramClient + Send
+    T: ProgramClient + Send,
 {
     let lua_runtime = Lua::new_with(StdLib::BASE);
 
@@ -92,48 +94,58 @@ fn map_execute_result(error: LuaError) -> ExecutionError {
         Error::SyntaxError { message, .. } => ExecutionError::SyntaxError(message),
         Error::RuntimeError(msg) => ExecutionError::DynamicError(msg),
         Error::MemoryError(msg) => ExecutionError::EnvironmentalError(msg),
-        Error::RecursiveMutCallback => ExecutionError::ProgrammaticError("Mutable callback ran twice".to_string()),
-        Error::CallbackDestructed => ExecutionError::EnvironmentalError("Callback is destructed".to_string()),
-        Error::StackError => ExecutionError::EnvironmentalError("No more space to place stack!".to_string()),
-        Error::BindError => ExecutionError::EnvironmentalError("Too many arguments to bind".to_string()),
-        Error::ToLuaConversionError { from, to, message } => {
-            ExecutionError::DynamicError(
-                format!(
-                    "Cannot convert the value from the runtime to the firmware(lua) ('{}' => '{}'): {}",
-                    from,
-                    to,
-                    message.unwrap_or("Error message not present".to_string())
-                )
-            )
+        Error::RecursiveMutCallback => {
+            ExecutionError::ProgrammaticError("Mutable callback ran twice".to_string())
         }
+        Error::CallbackDestructed => {
+            ExecutionError::EnvironmentalError("Callback is destructed".to_string())
+        }
+        Error::StackError => {
+            ExecutionError::EnvironmentalError("No more space to place stack!".to_string())
+        }
+        Error::BindError => {
+            ExecutionError::EnvironmentalError("Too many arguments to bind".to_string())
+        }
+        Error::ToLuaConversionError { from, to, message } => ExecutionError::DynamicError(format!(
+            "Cannot convert the value from the runtime to the firmware(lua) ('{}' => '{}'): {}",
+            from,
+            to,
+            message.unwrap_or("Error message not present".to_string())
+        )),
         Error::FromLuaConversionError { from, to, message } => {
-            ExecutionError::DynamicError(
-                format!(
-                    "Cannot convert the value from the firmware(lua) to the runtime ('{}' => '{}'): {}",
-                    from,
-                    to,
-                    message.unwrap_or("Error message not present".to_string())
-                )
-            )
+            ExecutionError::DynamicError(format!(
+                "Cannot convert the value from the firmware(lua) to the runtime ('{}' => '{}'): {}",
+                from,
+                to,
+                message.unwrap_or("Error message not present".to_string())
+            ))
         }
-        Error::CoroutineInactive => ExecutionError::EnvironmentalError("should be unreachable".to_string()),
+        Error::CoroutineInactive => {
+            ExecutionError::EnvironmentalError("should be unreachable".to_string())
+        }
 
         // These errors seem to be occur when the Rust side using `AnyUserData` and
         // somehow the lua (?) program violated the rust's important rule
-        Error::UserDataTypeMismatch => ExecutionError::EnvironmentalError("should be unreachable".to_string()),
-        Error::UserDataBorrowError => ExecutionError::EnvironmentalError("should be unreachable".to_string()),
-        Error::UserDataBorrowMutError => ExecutionError::EnvironmentalError("should be unreachable".to_string()),
+        Error::UserDataTypeMismatch => {
+            ExecutionError::EnvironmentalError("should be unreachable".to_string())
+        }
+        Error::UserDataBorrowError => {
+            ExecutionError::EnvironmentalError("should be unreachable".to_string())
+        }
+        Error::UserDataBorrowMutError => {
+            ExecutionError::EnvironmentalError("should be unreachable".to_string())
+        }
 
-        Error::MismatchedRegistryKey => ExecutionError::EnvironmentalError("should be unreachable (state contaminated)".to_string()),
+        Error::MismatchedRegistryKey => ExecutionError::EnvironmentalError(
+            "should be unreachable (state contaminated)".to_string(),
+        ),
         Error::CallbackError { traceback, cause } => {
             ExecutionError::DynamicError(format!("API call has failed: {cause:#?}\n{traceback}"))
-        },
-        Error::ExternalError(cause) => {
-            ExecutionError::DynamicError(format!("API call has failed due to the external cause: {cause}"))
-        },
-        _ => {
-            ExecutionError::EnvironmentalError("Unknown error occurred!!".to_string())
         }
+        Error::ExternalError(cause) => ExecutionError::DynamicError(format!(
+            "API call has failed due to the external cause: {cause}"
+        )),
+        _ => ExecutionError::EnvironmentalError("Unknown error occurred!!".to_string()),
     }
 }
 
@@ -147,7 +159,7 @@ mod tests {
 
     #[derive(Default)]
     pub struct Client {
-        booster: HashMap<String, f32>
+        booster: HashMap<String, f32>,
     }
     impl ProgramClient for Client {
         fn is_valid_booster(&self, name: &str) -> bool {
@@ -159,16 +171,16 @@ mod tests {
                 return Err(ClientError::ValidationFailure {
                     performing: "boost".to_owned(),
                     part: "location".to_owned(),
-                    reason: "Booster name is not valid".to_owned()
-                })
+                    reason: "Booster name is not valid".to_owned(),
+                });
             }
 
             if !(0.0..=1.0).contains(&power) {
                 return Err(ClientError::ValidationFailure {
                     performing: "boost".to_owned(),
                     part: "power".to_owned(),
-                    reason: "Booster output is not valid".to_owned()
-                })
+                    reason: "Booster output is not valid".to_owned(),
+                });
             }
 
             self.booster.insert(location.to_string(), power);
@@ -186,7 +198,10 @@ mod tests {
     #[test]
     fn runtime_should_fail_if_non_empty_string_is_returned() {
         let seed = "(This is a message)";
-        let result = execute(&mut Client::default(), &format!("function main() return '{seed}' end"));
+        let result = execute(
+            &mut Client::default(),
+            &format!("function main() return '{seed}' end"),
+        );
 
         assert_eq!(result, Err(ExecutionError::Reported(seed.to_string())));
     }
@@ -205,7 +220,7 @@ mod tests {
                 api_boost_2("booster_B", 0.3);
                 return ''
             end
-            "#
+            "#,
         );
 
         assert_eq!(result, Ok(()));

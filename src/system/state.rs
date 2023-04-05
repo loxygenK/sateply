@@ -1,9 +1,12 @@
+use ggez::graphics::Canvas;
 use ggez::{graphics, GameResult};
+use std::collections::HashMap;
 
-use crate::entity::map::EntityMap;
+use crate::entity::map::{EntityMap, EntityMapKey};
+use crate::theory::physics::PhysicalWorld;
 
 pub struct GameState {
-    pub entities: EntityMap,
+    pub physical_world: PhysicalWorld,
     pub satelite_svg: graphics::Image,
 }
 
@@ -11,21 +14,18 @@ pub struct GameState {
 pub enum KeyPressTiming {
     Pressed { repeated: bool },
     Pressing,
-    Released
+    Released,
 }
 
 impl GameState {
     pub fn new(ctx: &mut ggez::Context) -> GameResult<Self> {
         let satelite_svg = graphics::Image::from_path(ctx, "/imgs/satelite.png")?;
 
-        Ok(
-            Self {
-                entities: EntityMap::default(),
-                satelite_svg,
-            }
-        )
+        Ok(Self {
+            physical_world: PhysicalWorld::new(),
+            satelite_svg,
+        })
     }
 
-    pub fn tick_state(&mut self) {
-    }
+    pub fn tick_state(&mut self) {}
 }
