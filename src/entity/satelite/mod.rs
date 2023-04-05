@@ -81,14 +81,44 @@ impl RigidBody for Satelite {
     }
 
     fn update_physics(&mut self, controller: &mut PhysicsController) {
+        fn relative(x: f32, y: f32) -> (f32, f32) {
+            (141.0 / 2.0 * x, 48.0 / 2.0 * y)
+        }
+
+        // BL
         controller.apply_force_locally(
-            (-141.0 / 2.0, 0.0),// (-141.0 / 2.0, -48.0 / 2.0),
-            (0.0, 10000.0)
+            relative(-0.25, 1.0),
+            (0.0, -50.0)
         );
 
+        // BR
         controller.apply_force_locally(
-            (141.0 / 2.0, 0.0),// (-141.0 / 2.0, -48.0 / 2.0),
-            (0.0, -10000.0)
+            relative(0.25, 1.0),
+            (0.0, -50.0)
+        );
+
+        // FL
+        controller.apply_force_locally(
+            relative(-0.25, -1.0),
+            (0.0, 50.0)
+        );
+
+        // FR
+        controller.apply_force_locally(
+            relative(0.25, -1.0),
+            (0.0, 50.0)
+        );
+
+        // WL
+        controller.apply_force_locally(
+            relative(-0.85, 0.2),
+            (0.0, 0.0)
+        );
+
+        // WR
+        controller.apply_force_locally(
+            relative(0.85, 0.2),
+            (0.0, 0.0)
         );
     }
 
