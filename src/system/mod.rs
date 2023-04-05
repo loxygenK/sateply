@@ -56,9 +56,7 @@ impl EventHandler<GameError> for GameSystem {
     fn draw(&mut self, ctx: &mut ggez::Context) -> Result<(), GameError> {
         let mut canvas = graphics::Canvas::from_frame(ctx, Color::from([0.0, 0.0, 0.2, 1.0]));
 
-        let map = &mut self.entities;
-
-        map
+        self.entities
             .iter_mut_entity()
             .try_for_each(|EntityMapValue { entity, ref mut screen_image }| {
                 let mut img_canvas = graphics::Canvas::from_image(
@@ -67,7 +65,7 @@ impl EventHandler<GameError> for GameSystem {
                     graphics::Color::from_rgba(0, 0, 0, 0)
                 );
 
-                let draw = entity.inner().draw(ctx, &mut img_canvas, &self.state)?;
+                let draw = entity.inner().draw(&mut img_canvas, &self.state)?;
 
                 img_canvas.finish(ctx)?;
 

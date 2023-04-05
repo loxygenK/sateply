@@ -36,37 +36,22 @@ impl<'a> PhysicsController<'a> {
         }
     }
 
-    pub fn apply_force_locally(&mut self, at: (f32, f32), vector: (f32, f32)) -> ((f32, f32), (f32, f32)) {
-        let at = tuple_to_vec(at);
-        let vector = tuple_to_vec(vector);
-        // let angle = // PI / 2.0; // self.0.rotation().angle();
+    pub fn apply_force_locally(&mut self, at: (f32, f32), vector: (f32, f32)) {
         let angle = self.0.rotation().angle();
-        let at = Rotation2::new(angle) * Point2::from(at);
-        let vector = Rotation2::new(angle) * vector;
-
-        println!(
-            "{},{},{},{},{},{}",
-            at.x,
-            at.y,
-            vector.x,
-            vector.y,
-            angle,
-            self.0.angvel()
-        );
+        let at = Rotation2::new(angle) * Point2::from(tuple_to_vec(at));
+        let vector = Rotation2::new(angle) * tuple_to_vec(vector);
 
         self.apply_force(Some((at.x, at.y)), (vector.x, vector.y));
-
-        ((at.x, at.y), (vector.x, vector.y))
     }
 
     pub fn to_transform(&self) -> Transform {
-        dbg!(Transform {
+        Transform {
             location: (
                 self.0.translation().x,
                 self.0.translation().y,
             ),
             angle: self.0.rotation().angle(),
-        })
+        }
     }
 }
 

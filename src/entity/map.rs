@@ -30,10 +30,6 @@ impl EntityMap {
         &self.0
     }
 
-    pub fn iter_entity(&self) -> impl Iterator<Item = &EntityMapValue> {
-        self.0.values()
-    }
-
     pub fn iter_mut_entity(&mut self) -> impl Iterator<Item = &mut EntityMapValue> {
         self.0.values_mut()
     }
