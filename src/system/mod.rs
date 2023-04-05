@@ -70,11 +70,12 @@ impl EventHandler<GameError> for GameSystem {
                 img_canvas.finish(ctx)?;
 
                 let offset = vec2(draw.size.x / 2.0, draw.size.y / 2.0);
+                let offset_screen = vec2(1920.0 / 2.0, 1080.0 / 2.0);
                 canvas.draw(
                     &screen_image.image(ctx),
                     graphics::DrawParam::new()
                         .src(Rect::new(0.0, 0.0, draw.size.x / 1920.0, draw.size.y / 1080.0))
-                        .dest(draw.position + offset)
+                        .dest(draw.position + offset + offset_screen)
                         .rotation(draw.angle)
                         .offset(Point2 { x: 0.5, y: 0.5 })
                     // .color(Color::from((255, 255, 255, 128)))
@@ -87,7 +88,7 @@ impl EventHandler<GameError> for GameSystem {
                         Rect::new(draw.position.x, draw.position.y, draw.size.x, draw.size.y),
                         Color::RED
                     )?,
-                    graphics::DrawParam::default()
+                    graphics::DrawParam::from(offset_screen)
                 );
 
                 GameResult::Ok(())
