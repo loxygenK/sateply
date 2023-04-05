@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use ggez::{GameResult, graphics::{Canvas, Rect}, glam::Vec2};
+use ggez::{GameResult, graphics::{Canvas, Rect}, glam::Vec2, Context};
 use rand::{thread_rng, RngCore};
 
 use crate::system::state::GameState;
@@ -14,7 +14,7 @@ pub mod map;
 
 pub trait Entity {
     fn update(&mut self) -> GameResult;
-    fn draw(&self, canvas: &mut Canvas, state: &GameState) -> GameResult<DrawInstruction>;
+    fn draw(&self, ctx: &Context, canvas: &mut Canvas, state: &GameState) -> GameResult<DrawInstruction>;
     fn typed(self) -> TypedEntity;
 }
 

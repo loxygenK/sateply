@@ -1,6 +1,6 @@
 use std::{collections::HashMap, str::FromStr};
 
-use ggez::{graphics::{self, Color}, glam::{Vec2, vec2}};
+use ggez::{graphics::{self, Color}, glam::{Vec2, vec2}, Context};
 
 use crate::{system::state::GameState, theory::{physics::Physics, geometry::Vector}, lang::{ProgramClient, ClientError}};
 use crate::entity::RigidBody;
@@ -13,6 +13,8 @@ pub struct Satelite {
     pub physics: Option<Physics>,
     pub transform: Transform,
     pub booster: HashMap<SateliteBoosters, f32>,
+    pub at: (f32, f32),
+    pub vector: (f32, f32),
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -29,7 +31,9 @@ impl Satelite {
             booster: HashMap::from([
                 (SateliteBoosters::Front, 0.0),
                 (SateliteBoosters::Back, 0.0),
-            ])
+            ]),
+            at: (0.0, 0.0),
+            vector: (0.0, 0.0),
         }
     }
 }
@@ -41,20 +45,51 @@ impl Entity for Satelite {
 
     fn draw(
         &self,
+        ctx: &Context,
         canvas: &mut graphics::Canvas,
         state: &GameState
     ) -> ggez::GameResult<DrawInstruction> {
-        // canvas.draw(
-        //     &state.satelite_svg,
-        //     graphics::DrawParam::from(Vec2::new(0.0, 0.0))
-        //         .color(Color::WHITE)
-        //         .scale(Vec2::new(0.5, 0.5))
-        // );
+        canvas.draw(
+            &state.satelite_svg,
+            graphics::DrawParam::from(
+                vec2(
+                    self.transform.location.0,
+                    self.transform.location.1
+                ) + vec2(
+                    (state.satelite_svg.width() as f32 / 4.0),
+                    (state.satelite_svg.height() as f32 / 4.0)
+                )
+            )
+                .color(Color::WHITE)
+                .scale(Vec2::new(0.5, 0.5))
+                .rotation(self.transform.angle)
+                .offset(vec2(0.5, 0.5))
+        );
+
+        canvas.draw(
+            &graphics::Mesh::new_line(
+                &ctx.gfx,
+                &[
+                    vec2(0.0, 0.0),
+                    vec2(self.vector.0 * 10.0, self.vector.1 * 10.0)// - vec2(self.at.0, self.at.1)
+                ],
+                3.0,
+                Color::RED
+            )?,
+            graphics::DrawParam::from(
+                Vec2::from(self.at) +
+                    Vec2::from(self.transform.location) +
+                    (vec2(141.0, 48.0) / 2.0)
+            )
+        );
+
+        dbg!(&self.at);
 
         Ok(DrawInstruction {
-            position: self.transform.location.into(),
-            angle: self.transform.angle,
-            size: (100.0, 30.0).into() // ((state.satelite_svg.width() as f32 / 2.0), (state.satelite_svg.height() as f32 / 2.0)).into(),
+            position: vec2(0.0, 0.0), // self.transform.location.into(),
+            angle: 0.0, // self.transform.angle,
+            // size: ((state.satelite_svg.width() as f32 / 2.0), (state.satelite_svg.height() as f32 / 2.0)).into(),
+            size: vec2(1920.0, 1080.0)
         })
     }
 
@@ -66,8 +101,8 @@ impl Entity for Satelite {
 impl RigidBody for Satelite {
     fn get_property(&self) -> RigidBodyProperty {
         RigidBodyProperty {
-            mass: 1000.0,
-            size: (1.0, 1.0),
+            mass: 10.0,
+            size: (141.0, 48.0),
             initial_transform: self.transform.clone(),
         }
     }
@@ -81,7 +116,21 @@ impl RigidBody for Satelite {
     }
 
     fn update_physics(&mut self, controller: &mut PhysicsController) {
-        controller.apply_force(Some((0.5, -1.0)), (0.0, 1.0));
+        // controller.apply_force_locally((1.5, 0.0), (0.0, 0.01));
+
+        // controller.apply_force_locally((0.5, -0.5), (0.0, 0.01));
+        let (at, vector) = controller.apply_force_locally(
+            (-141.0 / 2.0, 0.0),// (-141.0 / 2.0, -48.0 / 2.0),
+            (0.0, 10.0)
+        );
+
+        let (at, vector) = controller.apply_force_locally(
+            (141.0 / 2.0, 0.0),// (-141.0 / 2.0, -48.0 / 2.0),
+            (0.0, -10.0)
+        );
+
+        self.at = at;
+        self.vector = vector;
     }
 
     fn report_transform(&mut self, transform: Transform) {

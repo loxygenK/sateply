@@ -67,7 +67,7 @@ impl EventHandler<GameError> for GameSystem {
                     graphics::Color::from_rgba(0, 0, 0, 0)
                 );
 
-                let draw = entity.inner().draw(&mut img_canvas, &self.state)?;
+                let draw = entity.inner().draw(ctx, &mut img_canvas, &self.state)?;
 
                 img_canvas.finish(ctx)?;
 

@@ -1,5 +1,6 @@
+use std::f32::consts::PI;
 use ggez::winit::platform::unix::x11::ffi::XIMCaretStyle::XIMIsInvisible;
-use rapier2d::na::{Point2, Vector2};
+use rapier2d::na::{Point2, Rotation2, Vector2};
 use rapier2d::prelude::*;
 use rlua::MetaMethod::Mul;
 use crate::scece::game::input::Control;
@@ -35,14 +36,37 @@ impl<'a> PhysicsController<'a> {
         }
     }
 
+    pub fn apply_force_locally(&mut self, at: (f32, f32), vector: (f32, f32)) -> ((f32, f32), (f32, f32)) {
+        let at = tuple_to_vec(at);
+        let vector = tuple_to_vec(vector);
+        // let angle = // PI / 2.0; // self.0.rotation().angle();
+        let angle = self.0.rotation().angle();
+        let at = Rotation2::new(angle) * Point2::from(at);
+        let vector = Rotation2::new(angle) * vector;
+
+        println!(
+            "{},{},{},{},{},{}",
+            at.x,
+            at.y,
+            vector.x,
+            vector.y,
+            angle,
+            self.0.angvel()
+        );
+
+        self.apply_force(Some((at.x, at.y)), (vector.x, vector.y));
+
+        ((at.x, at.y), (vector.x, vector.y))
+    }
+
     pub fn to_transform(&self) -> Transform {
-        Transform {
+        dbg!(Transform {
             location: (
                 self.0.translation().x,
                 self.0.translation().y,
             ),
             angle: self.0.rotation().angle(),
-        }
+        })
     }
 }
 
@@ -84,7 +108,17 @@ impl PhysicalWorld {
             .additional_mass(property.mass)
             .build();
 
-        Physics(self.rigidbody_set.insert(rigidbody))
+        let collider = ColliderBuilder::cuboid(
+            property.size.0 / 2.0,
+            property.size.1 / 2.0
+        )
+            .build();
+
+        let handle = self.rigidbody_set.insert(rigidbody);
+
+        self.collider_set.insert_with_parent(collider, handle, &mut self.rigidbody_set);
+
+        Physics(handle)
     }
 
     pub fn tick(&mut self) {

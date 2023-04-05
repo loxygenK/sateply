@@ -7,7 +7,7 @@ use crate::theory::physics::PhysicalWorld;
 
 pub struct GameState {
     pub physical_world: PhysicalWorld,
-    // pub satelite_svg: graphics::Image,
+    pub satelite_svg: graphics::Image,
 }
 
 #[derive(PartialEq, Eq)]
@@ -19,12 +19,12 @@ pub enum KeyPressTiming {
 
 impl GameState {
     pub fn new(ctx: &mut ggez::Context) -> GameResult<Self> {
-        // let satelite_svg = graphics::Image::from_path(ctx, "/imgs/satelite.png")?;
+        let satelite_svg = graphics::Image::from_path(ctx, "/imgs/satelite.png")?;
 
         Ok(
             Self {
                 physical_world: PhysicalWorld::new(),
-                // satelite_svg,
+                satelite_svg,
             }
         )
     }
