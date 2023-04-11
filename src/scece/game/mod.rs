@@ -1,8 +1,9 @@
 use ggez::Context;
 
 use crate::entity::map::EntityMap;
+use crate::lang::exec::LuaProgramExecutor;
 use crate::{
-    extract_by_entity, lang::exec::execute, system::state::GameState, utils::ExpectOnlyOneExt,
+    extract_by_entity, system::state::GameState, utils::ExpectOnlyOneExt,
 };
 
 use self::input::Control;
@@ -15,7 +16,6 @@ pub mod satelite;
 pub struct GameScene;
 impl Scene for GameScene {
     fn prepare(&self, _ctx: &Context, _state: &mut GameState, entity_map: &mut EntityMap) {
-        // do nothing
     }
 
     fn tick(

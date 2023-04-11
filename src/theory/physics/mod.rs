@@ -1,7 +1,6 @@
 use super::geometry::Transform;
 use crate::scece::game::input::Control;
 use crate::theory::geometry::Vector;
-use ggez::winit::platform::unix::x11::ffi::XIMCaretStyle::XIMIsInvisible;
 use rapier2d::na::{Point2, Rotation2, Vector2};
 use rapier2d::prelude::*;
 use rlua::MetaMethod::Mul;
