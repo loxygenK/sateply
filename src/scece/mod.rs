@@ -13,9 +13,9 @@ use crate::{
 pub mod game;
 
 pub trait Scene {
-    fn prepare(&self, ctx: &Context, state: &mut GameState, entity_map: &mut EntityMap);
+    fn prepare(&mut self, ctx: &Context, state: &mut GameState, entity_map: &mut EntityMap);
     fn tick(
-        &self,
+        &mut self,
         ctx: &Context,
         state: &mut GameState,
         entity_map: &mut EntityMap,
@@ -38,11 +38,18 @@ impl Scenes {
             Scenes::GameScene(inner) => inner,
         }
     }
+
+    pub fn inner_mut(&mut self) -> &mut dyn Scene {
+        match self {
+            Scenes::DefaultScene(inner) => inner,
+            Scenes::GameScene(inner) => inner,
+        }
+    }
 }
 
 pub struct DefaultScene;
 impl Scene for DefaultScene {
-    fn prepare(&self, ctx: &Context, state: &mut GameState, entity_map: &mut EntityMap) {
+    fn prepare(&mut self, ctx: &Context, state: &mut GameState, entity_map: &mut EntityMap) {
         let mut satelite = Satelite::new();
 
         let property = satelite.get_property();
@@ -53,13 +60,13 @@ impl Scene for DefaultScene {
     }
 
     fn tick(
-        &self,
-        _ctx: &Context,
+        &mut self,
+        ctx: &Context,
         _state: &mut GameState,
         entity_map: &mut EntityMap,
     ) -> Option<SceneTickAction> {
         Some(SceneTickAction::ChangeScene(Scenes::GameScene(
-            game::GameScene,
+            game::GameScene::new(),
         )))
     }
 }

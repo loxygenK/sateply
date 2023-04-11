@@ -1,3 +1,6 @@
+#![allow(unused)]
+#![allow(irrefutable_let_patterns)]
+
 pub mod entity;
 pub mod lang;
 pub mod scece;

@@ -25,8 +25,12 @@ pub struct Satelite {
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum SateliteBoosters {
-    Front,
-    Back,
+    BL,
+    BR,
+    FL,
+    FR,
+    WL,
+    WR,
 }
 
 impl Satelite {
@@ -35,8 +39,12 @@ impl Satelite {
             physics: None,
             transform: Transform::default(),
             booster: HashMap::from([
-                (SateliteBoosters::Front, 0.0),
-                (SateliteBoosters::Back, 0.0),
+                (SateliteBoosters::BL, 0.0),
+                (SateliteBoosters::BR, 0.0),
+                (SateliteBoosters::FL, 0.0),
+                (SateliteBoosters::FR, 0.0),
+                (SateliteBoosters::WL, 0.0),
+                (SateliteBoosters::WR, 0.0),
             ]),
         }
     }
@@ -93,27 +101,33 @@ impl RigidBody for Satelite {
     }
 
     fn update_physics(&mut self, controller: &mut PhysicsController) {
+        use SateliteBoosters::*;
+
         fn relative(x: f32, y: f32) -> (f32, f32) {
             (141.0 / 2.0 * x, 48.0 / 2.0 * y)
         }
 
+        let on = |location: SateliteBoosters| -> f32 {
+            *self.booster.get(&location).unwrap() * 100.0
+        };
+
         // BL
-        controller.apply_force_locally(relative(-0.25, 1.0), (0.0, -50.0));
+        controller.apply_force_locally(relative(-0.25, 1.0), (0.0, -on(BL)));
 
         // BR
-        controller.apply_force_locally(relative(0.25, 1.0), (0.0, -50.0));
+        controller.apply_force_locally(relative(0.25, 1.0), (0.0, -on(BR)));
 
         // FL
-        controller.apply_force_locally(relative(-0.25, -1.0), (0.0, 50.0));
+        controller.apply_force_locally(relative(-0.25, -1.0), (0.0, on(FL)));
 
         // FR
-        controller.apply_force_locally(relative(0.25, -1.0), (0.0, 50.0));
+        controller.apply_force_locally(relative(0.25, -1.0), (0.0, on(FR)));
 
         // WL
-        controller.apply_force_locally(relative(-0.85, 0.2), (0.0, 0.0));
+        controller.apply_force_locally(relative(-0.85, 0.2), (0.0, -on(WL)));
 
         // WR
-        controller.apply_force_locally(relative(0.85, 0.2), (0.0, 0.0));
+        controller.apply_force_locally(relative(0.85, 0.2), (0.0, -on(WR)));
     }
 
     fn report_transform(&mut self, transform: Transform) {
@@ -131,7 +145,7 @@ impl ProgramClient for Satelite {
             return Err(ClientError::ValidationFailure{
                 performing: "boosting".to_string(),
                 part: "location".to_string(),
-                reason: "power should be in between 0 - 1".to_string()
+                reason: format!("Unknown booster ({location})"),
             });
         };
 
@@ -144,6 +158,9 @@ impl ProgramClient for Satelite {
         }
 
         self.booster.insert(booster, power);
+
+        dbg!((&booster, &power));
+
         Ok(())
     }
 }
@@ -153,8 +170,12 @@ impl FromStr for SateliteBoosters {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "f" | "front" => Ok(Self::Front),
-            "b" | "back" => Ok(Self::Back),
+            "BL" => Ok(Self::BL),
+            "BR" => Ok(Self::BR),
+            "FL" => Ok(Self::FL),
+            "FR" => Ok(Self::FR),
+            "WL" => Ok(Self::WL),
+            "WR" => Ok(Self::WR),
             _ => Err(()),
         }
     }

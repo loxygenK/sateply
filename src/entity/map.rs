@@ -30,6 +30,10 @@ impl EntityMap {
         &self.0
     }
 
+    pub fn iter_entity(&self) -> impl Iterator<Item = &EntityMapValue> {
+        self.0.values()
+    }
+
     pub fn iter_mut_entity(&mut self) -> impl Iterator<Item = &mut EntityMapValue> {
         self.0.values_mut()
     }
@@ -92,7 +96,7 @@ impl EntityMap {
 macro_rules! extract_by_entity {
     ($map: expr, $type: ident) => {{
         $map.iter_entity().flat_map(|entity| {
-            if let $crate::entity::TypedEntity::$type(inner) = entity {
+            if let $crate::entity::TypedEntity::$type(inner) = &entity.entity {
                 Some(inner)
             } else {
                 None
@@ -102,7 +106,7 @@ macro_rules! extract_by_entity {
 
     (mut $map: expr, $type: ident) => {{
         $map.iter_mut_entity().flat_map(|entity| {
-            if let $crate::entity::TypedEntity::$type(inner) = entity {
+            if let $crate::entity::TypedEntity::$type(inner) = &mut entity.entity {
                 Some(inner)
             } else {
                 None

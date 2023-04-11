@@ -30,8 +30,8 @@ impl GameSystem {
     pub fn new(ctx: &mut ggez::Context) -> GameResult<Self> {
         let mut state = GameState::new(ctx)?;
         let mut entities = EntityMap::default();
-        let scene = Scenes::DefaultScene(DefaultScene);
-        scene.inner().prepare(ctx, &mut state, &mut entities);
+        let mut scene = Scenes::DefaultScene(DefaultScene);
+        scene.inner_mut().prepare(ctx, &mut state, &mut entities);
 
         Ok(Self {
             entities,
@@ -49,12 +49,12 @@ impl GameSystem {
 impl EventHandler<GameError> for GameSystem {
     fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), GameError> {
         while ctx.time.check_update_time(60) {
-            let Some(action) = self.scene.inner().tick(ctx, &mut self.state, &mut self.entities) else { continue; };
+            let Some(action) = self.scene.inner_mut().tick(ctx, &mut self.state, &mut self.entities) else { continue; };
             match action {
                 SceneTickAction::ChangeScene(scene) => {
                     self.scene = scene;
                     self.scene
-                        .inner()
+                        .inner_mut()
                         .prepare(ctx, &mut self.state, &mut self.entities);
                 }
             }
