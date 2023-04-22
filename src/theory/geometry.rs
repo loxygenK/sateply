@@ -1,4 +1,5 @@
-use std::ops::{Add, AddAssign, Mul, MulAssign};
+use ggez::mint::Point2;
+use rapier2d::na::{Rotation2, Vector2};
 
 #[derive(Clone, Debug, Default)]
 pub struct Transform {
@@ -12,53 +13,42 @@ impl Transform {
     }
 }
 
-#[derive(Copy, Clone, Debug, Default)]
-pub struct Vector(pub f32, pub f32);
 
-impl AddAssign for Vector {
-    fn add_assign(&mut self, rhs: Self) {
-        self.0 += rhs.0;
-        self.1 += rhs.1;
-    }
+pub fn rotate_vec2(radian: f32, vector: (f32, f32)) -> (f32, f32) {
+    let rotated = Rotation2::new(radian) * Vector2::from([vector.0, vector.1]);
+
+    (rotated.x, rotated.y)
 }
 
-impl Add for Vector {
-    type Output = Vector;
+#[cfg(test)]
+mod tests {
+    use std::f32::consts;
+    use crate::theory::geometry::rotate_vec2;
 
-    fn add(self, rhs: Self) -> Self::Output {
-        let mut new_vec = self;
-        new_vec += rhs;
+    #[test]
+    fn rotate_vec2_should_rotate_vec2_correctly() {
+        assert_approx_eq(
+            rotate_vec2(consts::FRAC_PI_2, (0.0, 1.0)),
+            (-1.0, 0.0)
+        );
 
-        new_vec
+        assert_approx_eq(
+            rotate_vec2(-consts::FRAC_PI_2, (0.0, 1.0)),
+            (1.0, 0.0)
+        );
     }
-}
 
-impl MulAssign<f32> for Vector {
-    fn mul_assign(&mut self, rhs: f32) {
-        self.0 *= rhs;
-        self.1 *= rhs;
-    }
-}
+    fn assert_approx_eq(left: (f32, f32), right: (f32, f32)) {
+        if left == right {
+            return;
+        }
 
-impl Mul<f32> for Vector {
-    type Output = Vector;
+        if (left.0 - right.0).abs() >= f32::EPSILON {
+            assert_eq!(left, right);
+        }
 
-    fn mul(self, rhs: f32) -> Self::Output {
-        let mut new_vec = self;
-        new_vec *= rhs;
-
-        new_vec
-    }
-}
-
-impl From<(f32, f32)> for Vector {
-    fn from(value: (f32, f32)) -> Self {
-        Vector(value.0, value.1)
-    }
-}
-
-impl From<Vector> for ggez::glam::Vec2 {
-    fn from(val: Vector) -> Self {
-        ggez::glam::vec2(val.0, val.1)
+        if (left.1 - right.1).abs() >= f32::EPSILON {
+            assert_eq!(left, right);
+        }
     }
 }

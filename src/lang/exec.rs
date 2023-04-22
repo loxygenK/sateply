@@ -1,11 +1,12 @@
 use std::sync::{Arc, Mutex};
 
-use rlua::{prelude::*, Function, Scope, StdLib, Table};
-use rlua::{Error, Result as LuaResult};
+use rlua::{prelude::*, StdLib};
+use rlua::{Error, Function, Result as LuaResult};
 
 use crate::lang::api::boost;
 
-use super::ProgramClient;
+use super::api::register_api;
+use super::{ProgramClient, ProgramEnvironment};
 
 #[derive(thiserror::Error, Debug, PartialEq, Eq)]
 pub enum ExecutionError {
@@ -31,60 +32,53 @@ pub enum ExecutionError {
     InvalidEntrypointReturnType,
 }
 
-pub fn register_api<'global, 'scope, T>(
-    global: &Table<'global>,
-    scope: &Scope<'global, 'scope>,
-    client: &'scope mut T,
-) -> LuaResult<()>
-where
-    T: ProgramClient + Send,
-    'global: 'scope,
-{
-    let client = Arc::new(Mutex::new(client));
-
-    let client_1 = client.clone();
-    global.set(
-        "api_boost",
-        scope.create_function(move |_, (location, power)| {
-            // api_boost.lock().unwrap().boost(location, power).expect("TODO: panic message");
-            boost(*client_1.lock().unwrap(), location, power).expect("");
-            Ok(())
-        })?,
-    )?;
-
-    Ok(())
+pub struct LuaProgramExecutor {
+    runtime: Lua
 }
 
-pub fn execute<T>(client: &mut T, code: &str) -> Result<(), ExecutionError>
-where
-    T: ProgramClient + Send,
-{
-    let lua_runtime = Lua::new_with(StdLib::BASE);
+impl LuaProgramExecutor {
+    pub fn new() -> Self {
+        Self {
+            runtime: Lua::new_with(StdLib::BASE)
+        }
+    }
 
-    let reported = lua_runtime.context(|ctx| {
-        let global = ctx.globals();
+    pub fn load(&mut self, program: &str) -> Result<(), ExecutionError> {
+        self.runtime.context(|ctx| {
+            let global = ctx.globals();
 
-        ctx.scope(|scope| {
-            register_api(&global, scope, client).map_err(map_execute_result)?;
-
-            ctx.load(code).eval::<()>().map_err(map_execute_result)?;
+            ctx.load(program).eval::<()>().map_err(map_execute_result)?;
 
             if !global.contains_key("main").map_err(map_execute_result)? {
                 return Err(ExecutionError::EntrypointNotFound);
             }
 
+            Ok(())
+        })
+    }
+
+    pub fn execute<C, E>(&mut self, client: &mut C, env: &E) -> Result<(), ExecutionError>
+        where C: ProgramClient + Send,
+              E: ProgramEnvironment + Send,
+    {
+        let reported = self.runtime.context(|ctx| {
+            let global = ctx.globals();
             let main: Function = global.get("main").map_err(map_execute_result)?;
 
-            let reported: String = main.call("").map_err(map_execute_result)?;
+            ctx.scope(|scope| {
+                register_api(&global, scope, client, env).map_err(map_execute_result)?;
 
-            Ok(reported)
-        })
-    })?;
+                let reported: String = main.call("").map_err(map_execute_result)?;
 
-    if reported.is_empty() {
-        Ok(())
-    } else {
-        Err(ExecutionError::Reported(reported.to_string()))
+                Ok(reported)
+            })
+        })?;
+
+        if reported.is_empty() {
+            Ok(())
+        } else {
+            Err(ExecutionError::Reported(reported.to_string()))
+        }
     }
 }
 
@@ -153,7 +147,7 @@ fn map_execute_result(error: LuaError) -> ExecutionError {
 mod tests {
     use std::collections::HashMap;
 
-    use crate::lang::ClientError;
+    use crate::lang::{ClientError, ModKey};
 
     use super::*;
 
@@ -188,32 +182,51 @@ mod tests {
         }
     }
 
+    struct Environment;
+    impl ProgramEnvironment for Environment {
+        fn is_pressed(&self, char: &str, mods: ModKey) -> Result<bool, ClientError> {
+            if char.len() != 1 {
+                return Err(ClientError::ValidationFailure {
+                    performing: "is_pressed".to_owned(),
+                    part: "mods".to_owned(),
+                    reason: "Key specification is not valid".to_owned(),
+                });
+            }
+
+            let char: char = char.chars().nth(0).unwrap();
+            Ok(char.is_alphabetic())
+        }
+    }
+
     #[test]
     fn runtime_should_success_if_empty_string_is_returned() {
-        let result = execute(&mut Client::default(), "function main() return '' end");
+        let mut executor = LuaProgramExecutor::new();
+        executor.load("function main() return '' end").unwrap();
+        let result = executor.execute(&mut Client::default(), &Environment);
 
         assert_eq!(result, Ok(()));
     }
 
     #[test]
     fn runtime_should_fail_if_non_empty_string_is_returned() {
+        let mut executor = LuaProgramExecutor::new();
+
         let seed = "(This is a message)";
-        let result = execute(
-            &mut Client::default(),
-            &format!("function main() return '{seed}' end"),
-        );
+        executor.load(&format!("function main() return '{seed}' end"));
+
+        let result = executor.execute(&mut Client::default(), &Environment);
 
         assert_eq!(result, Err(ExecutionError::Reported(seed.to_string())));
     }
 
     #[test]
     fn runtime_should_able_to_call_rusty_client_from_lua() {
+        let mut executor = LuaProgramExecutor::new();
         let mut client = Client::default();
 
         assert!(!client.booster.contains_key("booster_A"));
 
-        let result = execute(
-            &mut client,
+        executor.load(
             r#"
             function main()
                 api_boost("booster_A", 0.5);
@@ -222,6 +235,7 @@ mod tests {
             end
             "#,
         );
+        let result = executor.execute(&mut client, &Environment);
 
         assert_eq!(result, Ok(()));
         assert_eq!(client.booster.get("booster_A"), Some(&0.5));
