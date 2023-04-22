@@ -68,12 +68,12 @@ impl Scene for GameScene {
 
     fn tick(
         &mut self,
-        ctx: &Context,
+        ctx: &mut Context,
         state: &mut GameState,
         entity_map: &mut EntityMap,
     ) -> Option<super::SceneTickAction> {
         entity_map
-            .update_all_entity(&mut state.physical_world)
+            .update_all_entity(ctx, &mut state.physical_world)
             .unwrap();
 
         if self.execute_by_frame {

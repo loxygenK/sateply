@@ -2,6 +2,8 @@
 #![allow(irrefutable_let_patterns)]
 
 pub mod entity;
+pub mod exteditor;
+pub mod gui;
 pub mod lang;
 pub mod scece;
 pub mod system;

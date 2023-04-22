@@ -38,11 +38,11 @@ impl EntityMap {
         self.0.values_mut()
     }
 
-    pub fn update_all_entity(&mut self, physical_world: &mut PhysicalWorld) -> GameResult {
+    pub fn update_all_entity(&mut self, ctx: &mut Context, physical_world: &mut PhysicalWorld) -> GameResult {
         self.iter_mut_entity()
             .try_for_each(|EntityMapValue { entity, .. }| {
                 let Some(physics) = entity.as_mut_rigidbody() else {
-                    return entity.inner_mut().update();
+                    return entity.inner_mut().update(ctx);
                 };
 
                 let mut controller = physical_world.get(physics.get_mut_physics()).unwrap();

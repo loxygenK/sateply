@@ -1,14 +1,8 @@
 pub mod keyinput_list;
 pub mod state;
 
-use ggez::graphics::ScreenImage;
-use ggez::{
-    event::EventHandler,
-    glam::vec2,
-    graphics::{self, Color, Rect, StrokeOptions},
-    mint::Point2,
-    GameError, GameResult,
-};
+use ggez::graphics::{DrawParam, ScreenImage};
+use ggez::{event::EventHandler, glam::vec2, graphics::{self, Color, Rect, StrokeOptions}, mint::Point2, GameError, GameResult, Context};
 use std::collections::HashMap;
 
 use crate::entity::map::{EntityMap, EntityMapKey, EntityMapValue};
@@ -16,14 +10,19 @@ use crate::{
     entity::Entity,
     scece::{DefaultScene, SceneTickAction, Scenes},
 };
+use crate::entity::DrawOrigin;
+use crate::gui::GUIEntity;
 
 use self::state::{GameState, KeyPressTiming};
 
 pub struct GameSystem {
     pub entities: EntityMap,
+    pub ui: GUIEntity,
     pub state: GameState,
     pub scene: Scenes,
     pub images: HashMap<EntityMapKey, ScreenImage>,
+    pub frame_buffer: ScreenImage,
+    pub frame_count: u64,
 }
 
 impl GameSystem {
@@ -37,7 +36,10 @@ impl GameSystem {
             entities,
             state,
             scene,
+            ui: GUIEntity::new(ctx),
             images: HashMap::new(),
+            frame_buffer: graphics::ScreenImage::new(&ctx.gfx, None, 1.0, 1.0, 1),
+            frame_count: 0
         })
     }
 
@@ -49,6 +51,8 @@ impl GameSystem {
 impl EventHandler<GameError> for GameSystem {
     fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), GameError> {
         while ctx.time.check_update_time(60) {
+            self.ui.update(ctx)?;
+
             let Some(action) = self.scene.inner_mut().tick(ctx, &mut self.state, &mut self.entities) else { continue; };
             match action {
                 SceneTickAction::ChangeScene(scene) => {
@@ -64,7 +68,12 @@ impl EventHandler<GameError> for GameSystem {
     }
 
     fn draw(&mut self, ctx: &mut ggez::Context) -> Result<(), GameError> {
-        let mut canvas = graphics::Canvas::from_frame(ctx, Color::from([0.0, 0.0, 0.2, 1.0]));
+        let buf_image_instance = self.frame_buffer.image(&ctx.gfx);
+        let mut canvas = graphics::Canvas::from_image(
+            &ctx.gfx,
+            buf_image_instance.clone(),
+            Color::from([0.0, 0.0, 0.2, 1.0])
+        );
 
         self.entities.iter_mut_entity().try_for_each(
             |EntityMapValue {
@@ -82,7 +91,11 @@ impl EventHandler<GameError> for GameSystem {
                 img_canvas.finish(ctx)?;
 
                 let offset = vec2(draw.size.x / 2.0, draw.size.y / 2.0);
-                let offset_screen = vec2(1920.0 / 2.0, 1080.0 / 2.0);
+                let offset_screen = match draw.draw_origin {
+                    DrawOrigin::World => vec2(1920.0 / 2.0, 1080.0 / 2.0),
+                    DrawOrigin::ScreenAbsolute => vec2(0.0, 0.0)
+                };
+
                 canvas.draw(
                     &screen_image.image(ctx),
                     graphics::DrawParam::new()
@@ -111,6 +124,17 @@ impl EventHandler<GameError> for GameSystem {
             },
         )?;
 
+        self.ui.draw(&mut canvas, &self.state)?;
+
+        canvas.finish(ctx)?;
+
+        let mut canvas = graphics::Canvas::from_frame(ctx, None);
+        canvas.draw(&buf_image_instance, DrawParam::default());
         canvas.finish(ctx)
+    }
+
+    fn text_input_event(&mut self, _ctx: &mut Context, character: char) -> Result<(), GameError> {
+        self.ui.on_text_input(character);
+        Ok(())
     }
 }

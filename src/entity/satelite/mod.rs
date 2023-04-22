@@ -52,7 +52,7 @@ impl Satelite {
 }
 
 impl Entity for Satelite {
-    fn update(&mut self) -> ggez::GameResult {
+    fn update(&mut self, _ctx: &mut Context) -> ggez::GameResult {
         Ok(())
     }
 
@@ -74,8 +74,8 @@ impl Entity for Satelite {
             size: (
                 (state.satelite_svg.width() as f32 / 2.0),
                 (state.satelite_svg.height() as f32 / 2.0),
-            )
-                .into(),
+            ).into(),
+            ..Default::default()
         })
     }
 
@@ -129,7 +129,6 @@ impl RigidBody for Satelite {
 
         // WR
         controller.apply_force_locally(relative(0.85, 0.0), (0.0, -on(WR)));
-        }
     }
 
     fn report_transform(&mut self, transform: Transform) {
