@@ -66,7 +66,7 @@ impl LuaProgramExecutor {
             let main: Function = global.get("main").map_err(map_execute_result)?;
 
             ctx.scope(|scope| {
-                register_api(&global, scope, client).map_err(map_execute_result)?;
+                register_api(&global, scope, client, env).map_err(map_execute_result)?;
 
                 let reported: String = main.call("").map_err(map_execute_result)?;
 
@@ -184,13 +184,17 @@ mod tests {
 
     struct Environment;
     impl ProgramEnvironment for Environment {
-        fn is_pressed(&self, char: &str, mods: ModKey) -> Option<bool> {
+        fn is_pressed(&self, char: &str, mods: ModKey) -> Result<bool, ClientError> {
             if char.len() != 1 {
-                return None;
+                return Err(ClientError::ValidationFailure {
+                    performing: "is_pressed".to_owned(),
+                    part: "mods".to_owned(),
+                    reason: "Key specification is not valid".to_owned(),
+                });
             }
 
             let char: char = char.chars().nth(0).unwrap();
-            Some(char.is_alphabetic())
+            Ok(char.is_alphabetic())
         }
     }
 

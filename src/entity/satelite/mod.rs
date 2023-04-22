@@ -1,10 +1,11 @@
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::HashMap, str::FromStr, f32::consts::PI};
 
 use ggez::{
     glam::{vec2, Vec2},
     graphics::{self, Color},
     Context,
 };
+use rapier2d::prelude::Rotation;
 
 use super::{DrawInstruction, Entity, TypedEntity};
 use crate::entity::RigidBody;
@@ -13,7 +14,7 @@ use crate::theory::physics::{PhysicsController, RigidBodyProperty};
 use crate::{
     lang::{ClientError, ProgramClient},
     system::state::GameState,
-    theory::{geometry::Vector, physics::Physics},
+    theory::physics::Physics,
 };
 
 #[derive(Debug)]
@@ -108,26 +109,27 @@ impl RigidBody for Satelite {
         }
 
         let on = |location: SateliteBoosters| -> f32 {
-            *self.booster.get(&location).unwrap() * 100.0
+            *self.booster.get(&location).unwrap() * 250000.0
         };
 
         // BL
-        controller.apply_force_locally(relative(-0.25, 1.0), (0.0, -on(BL)));
+        controller.apply_force_locally(relative(-0.25, 0.0), (0.0, -on(BL)));
 
         // BR
-        controller.apply_force_locally(relative(0.25, 1.0), (0.0, -on(BR)));
+        controller.apply_force_locally(relative(0.25, 0.0), (0.0, -on(BR)));
 
         // FL
-        controller.apply_force_locally(relative(-0.25, -1.0), (0.0, on(FL)));
+        controller.apply_force_locally(relative(-0.25, 0.0), (0.0, on(FL)));
 
         // FR
-        controller.apply_force_locally(relative(0.25, -1.0), (0.0, on(FR)));
+        controller.apply_force_locally(relative(0.25, 0.0), (0.0, on(FR)));
 
         // WL
-        controller.apply_force_locally(relative(-0.85, 0.2), (0.0, -on(WL)));
+        controller.apply_force_locally(relative(-0.85, 0.0), (0.0, -on(WL)));
 
         // WR
-        controller.apply_force_locally(relative(0.85, 0.2), (0.0, -on(WR)));
+        controller.apply_force_locally(relative(0.85, 0.0), (0.0, -on(WR)));
+        }
     }
 
     fn report_transform(&mut self, transform: Transform) {
@@ -159,7 +161,7 @@ impl ProgramClient for Satelite {
 
         self.booster.insert(booster, power);
 
-        dbg!((&booster, &power));
+        // dbg!((&booster, &power));
 
         Ok(())
     }

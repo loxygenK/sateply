@@ -1,10 +1,10 @@
 use super::geometry::Transform;
 use crate::scece::game::input::Control;
-use crate::theory::geometry::Vector;
-use rapier2d::na::{Point2, Rotation2, Vector2};
+use rapier2d::na::{Isometry2, Point2, Rotation2, Vector2};
 use rapier2d::prelude::*;
 use rlua::MetaMethod::Mul;
 use std::f32::consts::PI;
+use crate::theory::geometry::rotate_vec2;
 
 #[derive(Debug)]
 pub struct RigidBodyProperty {
@@ -17,7 +17,7 @@ pub struct RigidBodyProperty {
 pub struct Physics(RigidBodyHandle);
 
 #[derive(Debug)]
-pub struct PhysicsController<'a>(&'a mut RigidBody);
+pub struct PhysicsController<'a>(pub &'a mut RigidBody);
 
 impl<'a> PhysicsController<'a> {
     pub(self) fn new(physics: &'a mut RigidBody) -> Self {
@@ -28,18 +28,23 @@ impl<'a> PhysicsController<'a> {
         match at {
             Some(at) => {
                 self.0
-                    .add_force_at_point(tuple_to_vec(vector), tuple_to_vec(at).into(), true)
+                    .add_force_at_point(
+                        tuple_to_vec(vector),
+                        (tuple_to_vec(at) + self.0.position().translation.vector).into(),
+                        true
+                    )
             }
-            None => self.0.add_force(tuple_to_vec(vector), true),
+            None => self.0.apply_impulse(tuple_to_vec(vector), true),
         }
     }
 
     pub fn apply_force_locally(&mut self, at: (f32, f32), vector: (f32, f32)) {
         let angle = self.0.rotation().angle();
-        let at = Rotation2::new(angle) * Point2::from(tuple_to_vec(at));
-        let vector = Rotation2::new(angle) * tuple_to_vec(vector);
 
-        self.apply_force(Some((at.x, at.y)), (vector.x, vector.y));
+        let at = rotate_vec2(angle, at);
+        let vector = rotate_vec2(angle, vector);
+
+        self.apply_force(Some(at), vector);
     }
 
     pub fn to_transform(&self) -> Transform {

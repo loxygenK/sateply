@@ -47,6 +47,9 @@ impl EntityMap {
 
                 let mut controller = physical_world.get(physics.get_mut_physics()).unwrap();
 
+                // TODO: This is not good I guess..
+                controller.0.reset_forces(true);
+                controller.0.reset_torques(true);
                 physics.update_physics(&mut controller);
 
                 Ok(())
@@ -64,6 +67,7 @@ impl EntityMap {
                 let transform = controller.to_transform();
 
                 physics.report_transform(transform);
+
             });
 
         Ok(())

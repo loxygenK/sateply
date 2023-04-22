@@ -1,6 +1,6 @@
 use ggez::{Context, winit::event::VirtualKeyCode, input::keyboard::KeyboardContext};
 
-use crate::lang::{ModKey, ProgramEnvironment};
+use crate::lang::{ModKey, ProgramEnvironment, api::APIError, ClientError};
 
 macro_rules! generate_keybind {
     ( $value: expr => $($key: ident),+ ) => {
@@ -34,9 +34,17 @@ pub struct Environment<'ctx> {
     keyboard_ctx: &'ctx KeyboardContext,
 }
 impl ProgramEnvironment for Environment<'_> {
-    fn is_pressed(&self, char: &str, mods: ModKey) -> Option<bool> {
-        let keycode = map_char_to_keycode(char)?;
-        Some(self.keyboard_ctx.is_key_pressed(keycode))
+    fn is_pressed(&self, char: &str, mods: ModKey) -> Result<bool, ClientError> {
+        let keycode = map_char_to_keycode(char)
+            .ok_or(ClientError::ValidationFailure {
+                performing: "Key press check".to_string(),
+                part: "char".to_string(),
+                reason: format!("No such key: {char}")
+            })?;
+
+        // dbg!(&keycode, self.keyboard_ctx.is_key_pressed(keycode));
+
+        Ok(self.keyboard_ctx.is_key_pressed(keycode))
     }
 }
 impl<'ctx> Environment<'ctx> {

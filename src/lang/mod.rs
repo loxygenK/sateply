@@ -1,3 +1,5 @@
+use self::api::APIResult;
+
 pub mod api;
 pub mod exec;
 
@@ -32,5 +34,5 @@ bitflags::bitflags! {
 }
 
 pub trait ProgramEnvironment {
-    fn is_pressed(&self, char: &str, mods: ModKey) -> Option<bool>;
+    fn is_pressed(&self, char: &str, mods: ModKey) -> Result<bool, ClientError>;
 }
