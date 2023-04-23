@@ -1,9 +1,4 @@
-
 use ggez::{graphics, GameResult};
-
-
-
-
 
 pub struct GameState {
     pub satellite_svg: graphics::Image,
@@ -23,7 +18,7 @@ impl GameState {
 
         Ok(Self {
             satellite_svg,
-            next_lua_program: None
+            next_lua_program: None,
         })
     }
 

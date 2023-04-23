@@ -1,6 +1,6 @@
-use ggez::{winit::event::VirtualKeyCode, input::keyboard::KeyboardContext};
+use ggez::{input::keyboard::KeyboardContext, winit::event::VirtualKeyCode};
 
-use crate::lang::{ModKey, ProgramEnvironment, ClientError};
+use crate::lang::{ClientError, ModKey, ProgramEnvironment};
 
 macro_rules! match_keycode {
     ( $value: expr => $($key: ident),+ ) => {
@@ -24,7 +24,7 @@ fn map_char_to_keycode(key: &str) -> Option<VirtualKeyCode> {
     match key {
         " " => Some(VirtualKeyCode::Space),
         "SPACE" => Some(VirtualKeyCode::Space),
-        _ => None
+        _ => None,
     }
 }
 
@@ -33,12 +33,11 @@ pub struct Environment<'ctx> {
 }
 impl ProgramEnvironment for Environment<'_> {
     fn is_pressed(&self, char: &str, _mods: ModKey) -> Result<bool, ClientError> {
-        let keycode = map_char_to_keycode(char)
-            .ok_or(ClientError::ValidationFailure {
-                performing: "Key press check".to_string(),
-                part: "char".to_string(),
-                reason: format!("No such key: {char}")
-            })?;
+        let keycode = map_char_to_keycode(char).ok_or(ClientError::ValidationFailure {
+            performing: "Key press check".to_string(),
+            part: "char".to_string(),
+            reason: format!("No such key: {char}"),
+        })?;
 
         Ok(self.keyboard_ctx.is_key_pressed(keycode))
     }

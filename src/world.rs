@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::entity::TypedEntity;
-use crate::theory::physics::{PhysicalWorld};
+use crate::theory::physics::PhysicalWorld;
 use ggez::graphics::ScreenImage;
 use ggez::{graphics, Context, GameResult};
 use rand::{thread_rng, RngCore};
@@ -50,19 +50,16 @@ impl World {
 
         self.physical_world.tick();
 
-        self.map
-            .values_mut()
-            .for_each(|WorldValue { entity, .. }| {
-                let Some(physics) = entity.as_mut_rigidbody() else {
+        self.map.values_mut().for_each(|WorldValue { entity, .. }| {
+            let Some(physics) = entity.as_mut_rigidbody() else {
                     return;
                 };
 
-                let controller = self.physical_world.get(physics.get_mut_physics()).unwrap();
-                let transform = controller.to_transform();
+            let controller = self.physical_world.get(physics.get_mut_physics()).unwrap();
+            let transform = controller.to_transform();
 
-                physics.report_transform(transform);
-
-            });
+            physics.report_transform(transform);
+        });
 
         Ok(())
     }
@@ -71,11 +68,7 @@ impl World {
         self.map.get_mut(key)
     }
 
-    pub fn insert(
-        &mut self,
-        ctx: &Context,
-        mut entity: TypedEntity,
-    ) -> (&WorldKey, &WorldValue) {
+    pub fn insert(&mut self, ctx: &Context, mut entity: TypedEntity) -> (&WorldKey, &WorldValue) {
         let mut rng = thread_rng();
 
         if let Some(physics_impl) = entity.as_mut_rigidbody() {

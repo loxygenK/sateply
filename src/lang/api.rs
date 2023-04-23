@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use rlua::{Result as LuaResult, Table, Scope};
+use rlua::{Result as LuaResult, Scope, Table};
 
 use super::{ClientError, ProgramClient, ProgramEnvironment};
 
@@ -31,8 +31,7 @@ pub fn boost<T: ProgramClient>(client: &mut T, location: String, power: f32) -> 
 }
 
 pub fn is_pressed<T: ProgramEnvironment>(env: &T, char: String, mods: u8) -> APIResult<bool> {
-    env
-        .is_pressed(&char, ModKey::from_bits(mods).unwrap_or(ModKey::empty()))
+    env.is_pressed(&char, ModKey::from_bits(mods).unwrap_or(ModKey::empty()))
         .map_err(|err| APIError::new("is_pressed", err))
 }
 

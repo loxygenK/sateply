@@ -1,10 +1,9 @@
 use super::geometry::Transform;
-use rapier2d::na::{Vector2};
+use rapier2d::na::Vector2;
 use rapier2d::prelude::*;
 
-
-use std::fmt::{Debug, Formatter};
 use crate::theory::geometry::rotate_vec2;
+use std::fmt::{Debug, Formatter};
 
 #[derive(Debug)]
 pub struct RigidBodyProperty {
@@ -22,14 +21,11 @@ pub struct PhysicsController<'a>(pub &'a mut RigidBody);
 impl<'a> PhysicsController<'a> {
     pub fn apply_force(&mut self, at: Option<(f32, f32)>, vector: (f32, f32)) {
         match at {
-            Some(at) => {
-                self.0
-                    .add_force_at_point(
-                        tuple_to_vec(vector),
-                        (tuple_to_vec(at) + self.0.position().translation.vector).into(),
-                        true
-                    )
-            }
+            Some(at) => self.0.add_force_at_point(
+                tuple_to_vec(vector),
+                (tuple_to_vec(at) + self.0.position().translation.vector).into(),
+                true,
+            ),
             None => self.0.apply_impulse(tuple_to_vec(vector), true),
         }
     }

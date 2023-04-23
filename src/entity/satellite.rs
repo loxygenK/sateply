@@ -79,7 +79,8 @@ impl Entity for Satellite {
             size: (
                 (state.satellite_svg.width() as f32 / 2.0),
                 (state.satellite_svg.height() as f32 / 2.0),
-            ).into(),
+            )
+                .into(),
             ..Default::default()
         })
     }

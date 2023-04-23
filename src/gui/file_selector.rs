@@ -1,6 +1,6 @@
-use std::path::{PathBuf};
-use std::sync::{Arc, Mutex};
 use rfd::AsyncFileDialog;
+use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 
 #[derive(Default)]
 pub struct FileDialog {

@@ -1,9 +1,5 @@
-
-
 use rlua::{prelude::*, StdLib, Table};
 use rlua::{Error, Function};
-
-
 
 use super::api::register_api;
 use super::{ProgramClient, ProgramEnvironment};
@@ -33,7 +29,7 @@ pub enum ExecutionError {
 }
 
 pub struct LuaProgramExecutor {
-    runtime: Lua
+    runtime: Lua,
 }
 
 impl Default for LuaProgramExecutor {
@@ -45,7 +41,7 @@ impl Default for LuaProgramExecutor {
 impl LuaProgramExecutor {
     pub fn new() -> Self {
         Self {
-            runtime: Lua::new_with(StdLib::BASE)
+            runtime: Lua::new_with(StdLib::BASE),
         }
     }
 
@@ -64,8 +60,9 @@ impl LuaProgramExecutor {
     }
 
     pub fn execute<C, E>(&mut self, client: &mut C, env: &E) -> Result<(), ExecutionError>
-        where C: ProgramClient + Send,
-              E: ProgramEnvironment + Send,
+    where
+        C: ProgramClient + Send,
+        E: ProgramEnvironment + Send,
     {
         let reported = self.runtime.context(|ctx| {
             let global = ctx.globals();
@@ -76,7 +73,10 @@ impl LuaProgramExecutor {
 
             let main: Function = global.get("main").map_err(map_execute_result)?;
 
-            let api_table: Table = ctx.load("api = {{}}; return api").eval().map_err(map_execute_result)?;
+            let api_table: Table = ctx
+                .load("api = {{}}; return api")
+                .eval()
+                .map_err(map_execute_result)?;
 
             ctx.scope(|scope| {
                 register_api(&api_table, scope, client, env).map_err(map_execute_result)?;

@@ -1,4 +1,4 @@
-use ggez::{glam::Vec2, graphics::Canvas, GameResult, Context};
+use ggez::{glam::Vec2, graphics::Canvas, Context, GameResult};
 
 use crate::entity::satellite::Satellite;
 
