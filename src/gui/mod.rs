@@ -6,8 +6,10 @@ use ggez::context::Has;
 use ggez::glam::{Vec2, vec2};
 use ggez::graphics::{Canvas, DrawParam};
 use crate::entity::{DrawInstruction, DrawOrigin, Entity, TypedEntity};
-use crate::file_selector::FileDialog;
+use crate::gui::file_selector::FileDialog;
 use crate::system::state::GameState;
+
+mod file_selector;
 
 pub struct GUIEntity {
     gui: Gui,

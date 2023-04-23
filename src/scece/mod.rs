@@ -1,24 +1,24 @@
 use ggez::{input::keyboard::KeyInput, Context};
 
-use crate::entity::map::EntityMap;
+use crate::world::World;
 use crate::entity::RigidBody;
 use crate::{
-    entity::{satelite::Satelite, Entity},
+    entity::Entity,
     extract_by_entity,
     system::{keyinput_list::KeyTypeMatchMap, state::GameState},
     theory::physics::Physics,
-    utils::ExpectOnlyOneExt,
+    traitext::ExpectOnlyOneExt,
 };
 
 pub mod game;
 
 pub trait Scene {
-    fn prepare(&mut self, ctx: &Context, state: &mut GameState, entity_map: &mut EntityMap);
+    fn prepare(&mut self, ctx: &Context, state: &mut GameState, entity_map: &mut World);
     fn tick(
         &mut self,
         ctx: &mut Context,
         state: &mut GameState,
-        entity_map: &mut EntityMap,
+        entity_map: &mut World,
     ) -> Option<SceneTickAction>;
 }
 
@@ -49,24 +49,26 @@ impl Scenes {
 
 pub struct DefaultScene;
 impl Scene for DefaultScene {
-    fn prepare(&mut self, ctx: &Context, state: &mut GameState, entity_map: &mut EntityMap) {
-        let mut satelite = Satelite::new();
+    fn prepare(&mut self, ctx: &Context, state: &mut GameState, entity_map: &mut World) {
+        // let mut satelite = Satellite::new();
 
-        let property = satelite.get_property();
-        let physics = state.physical_world.register(property);
-        satelite.register_physics(physics);
+        // let property = satelite.get_property();
+        // let physics = state.physical_world.register(property);
+        // satelite.register_physics(physics);
 
-        entity_map.insert(ctx, satelite.typed());
+        // entity_map.insert(ctx, satelite.typed());
     }
 
     fn tick(
         &mut self,
         _ctx: &mut Context,
         _state: &mut GameState,
-        entity_map: &mut EntityMap,
+        entity_map: &mut World,
     ) -> Option<SceneTickAction> {
-        Some(SceneTickAction::ChangeScene(Scenes::GameScene(
-            game::GameScene::new(),
-        )))
+        // Some(SceneTickAction::ChangeScene(Scenes::GameScene(
+        //     game::GameScene::new(),
+        // )))
+
+        None
     }
 }

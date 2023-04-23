@@ -18,7 +18,7 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct Satelite {
+pub struct Satellite {
     pub physics: Option<Physics>,
     pub transform: Transform,
     pub booster: HashMap<SateliteBoosters, f32>,
@@ -34,7 +34,7 @@ pub enum SateliteBoosters {
     WR,
 }
 
-impl Satelite {
+impl Satellite {
     pub fn new() -> Self {
         Self {
             physics: None,
@@ -51,7 +51,7 @@ impl Satelite {
     }
 }
 
-impl Entity for Satelite {
+impl Entity for Satellite {
     fn update(&mut self, _ctx: &mut Context) -> ggez::GameResult {
         Ok(())
     }
@@ -80,11 +80,11 @@ impl Entity for Satelite {
     }
 
     fn typed(self) -> TypedEntity {
-        TypedEntity::Satelite(self)
+        TypedEntity::Satellite(self)
     }
 }
 
-impl RigidBody for Satelite {
+impl RigidBody for Satellite {
     fn get_property(&self) -> RigidBodyProperty {
         RigidBodyProperty {
             mass: 1000.0,
@@ -136,7 +136,7 @@ impl RigidBody for Satelite {
     }
 }
 
-impl ProgramClient for Satelite {
+impl ProgramClient for Satellite {
     fn is_valid_booster(&self, name: &str) -> bool {
         name.parse::<SateliteBoosters>().is_ok()
     }

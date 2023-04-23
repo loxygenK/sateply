@@ -1,46 +1,44 @@
 use std::collections::HashMap;
 
-use crate::entity::RigidBody;
+use crate::entity::{RigidBody, TypedEntity};
 use crate::theory::physics::{PhysicalWorld, Physics, PhysicsController};
 use ggez::graphics::ScreenImage;
 use ggez::{graphics, Context, GameResult};
 use rand::{thread_rng, RngCore};
 use rapier2d::crossbeam::channel::internal::SelectHandle;
 
-use super::{Entity, TypedEntity};
-
-pub type EntityMapKey = u32;
+pub type WorldKey = u32;
 
 #[derive(Debug)]
-pub struct EntityMapValue {
+pub struct WorldValue {
     pub entity: TypedEntity,
     pub screen_image: ScreenImage,
 }
 
 #[derive(Default, Debug)]
-pub struct EntityMap(HashMap<EntityMapKey, EntityMapValue>);
+pub struct World(HashMap<WorldKey, WorldValue>);
 
 pub struct EntityMapEntry<'a> {
-    pub key: EntityMapKey,
-    pub value: &'a EntityMapValue,
+    pub key: WorldKey,
+    pub value: &'a WorldValue,
 }
 
-impl EntityMap {
-    pub fn inner(&self) -> &HashMap<EntityMapKey, EntityMapValue> {
+impl World {
+    pub fn inner(&self) -> &HashMap<WorldKey, WorldValue> {
         &self.0
     }
 
-    pub fn iter_entity(&self) -> impl Iterator<Item = &EntityMapValue> {
+    pub fn iter_entity(&self) -> impl Iterator<Item = &WorldValue> {
         self.0.values()
     }
 
-    pub fn iter_mut_entity(&mut self) -> impl Iterator<Item = &mut EntityMapValue> {
+    pub fn iter_mut_entity(&mut self) -> impl Iterator<Item = &mut WorldValue> {
         self.0.values_mut()
     }
 
     pub fn update_all_entity(&mut self, ctx: &mut Context, physical_world: &mut PhysicalWorld) -> GameResult {
         self.iter_mut_entity()
-            .try_for_each(|EntityMapValue { entity, .. }| {
+            .try_for_each(|WorldValue { entity, .. }| {
                 let Some(physics) = entity.as_mut_rigidbody() else {
                     return entity.inner_mut().update(ctx);
                 };
@@ -58,7 +56,7 @@ impl EntityMap {
         physical_world.tick();
 
         self.iter_mut_entity()
-            .for_each(|EntityMapValue { entity, .. }| {
+            .for_each(|WorldValue { entity, .. }| {
                 let Some(physics) = entity.as_mut_rigidbody() else {
                     return;
                 };
@@ -77,7 +75,7 @@ impl EntityMap {
         &mut self,
         ctx: &Context,
         entity: TypedEntity,
-    ) -> (&EntityMapKey, &EntityMapValue) {
+    ) -> (&WorldKey, &WorldValue) {
         let mut rng = thread_rng();
 
         let mut key = rng.next_u32();
@@ -86,7 +84,7 @@ impl EntityMap {
         }
         self.0.insert(
             key,
-            EntityMapValue {
+            WorldValue {
                 entity,
                 screen_image: graphics::ScreenImage::new(&ctx.gfx, None, 1.0, 1.0, 1),
             },

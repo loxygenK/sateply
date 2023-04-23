@@ -8,8 +8,7 @@ edition = "2021"
 [dependencies]
 bitflags = "2.1.0"
 ggez = "0.9.0-rc0"
-# ggegui = { git = "https://github.com/loxygenK/ggegui" }
-ggegui = { path = "../forks/ggegui" }
+ggegui = { git = "https://github.com/loxygenK/ggegui" }
 rand = "0.8.5"
 rapier2d = "0.17.2"
 rlua = "0.19.4"
