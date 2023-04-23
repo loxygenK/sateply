@@ -1,15 +1,10 @@
-#![allow(unused)]
-#![allow(irrefutable_let_patterns)]
-
 pub mod entity;
-pub mod exteditor;
 pub mod gui;
 pub mod lang;
-pub mod scece;
 pub mod system;
 pub mod theory;
-pub mod utils;
-pub mod file_selector;
+pub mod traitext;
+pub mod world;
 
 use std::{env, path::PathBuf};
 

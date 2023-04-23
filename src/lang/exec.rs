@@ -1,9 +1,5 @@
-use std::sync::{Arc, Mutex};
-
-use rlua::{prelude::*, StdLib};
-use rlua::{Error, Function, Result as LuaResult};
-
-use crate::lang::api::boost;
+use rlua::{prelude::*, StdLib, Table};
+use rlua::{Error, Function};
 
 use super::api::register_api;
 use super::{ProgramClient, ProgramEnvironment};
@@ -33,13 +29,19 @@ pub enum ExecutionError {
 }
 
 pub struct LuaProgramExecutor {
-    runtime: Lua
+    runtime: Lua,
+}
+
+impl Default for LuaProgramExecutor {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl LuaProgramExecutor {
     pub fn new() -> Self {
         Self {
-            runtime: Lua::new_with(StdLib::BASE)
+            runtime: Lua::new_with(StdLib::BASE),
         }
     }
 
@@ -58,8 +60,9 @@ impl LuaProgramExecutor {
     }
 
     pub fn execute<C, E>(&mut self, client: &mut C, env: &E) -> Result<(), ExecutionError>
-        where C: ProgramClient + Send,
-              E: ProgramEnvironment + Send,
+    where
+        C: ProgramClient + Send,
+        E: ProgramEnvironment + Send,
     {
         let reported = self.runtime.context(|ctx| {
             let global = ctx.globals();
@@ -70,8 +73,13 @@ impl LuaProgramExecutor {
 
             let main: Function = global.get("main").map_err(map_execute_result)?;
 
+            let api_table: Table = ctx
+                .load("api = {{}}; return api")
+                .eval()
+                .map_err(map_execute_result)?;
+
             ctx.scope(|scope| {
-                register_api(&global, scope, client, env).map_err(map_execute_result)?;
+                register_api(&api_table, scope, client, env).map_err(map_execute_result)?;
 
                 let reported: String = main.call("").map_err(map_execute_result)?;
 
@@ -82,7 +90,7 @@ impl LuaProgramExecutor {
         if reported.is_empty() {
             Ok(())
         } else {
-            Err(ExecutionError::Reported(reported.to_string()))
+            Err(ExecutionError::Reported(reported))
         }
     }
 }
@@ -189,7 +197,7 @@ mod tests {
 
     struct Environment;
     impl ProgramEnvironment for Environment {
-        fn is_pressed(&self, char: &str, mods: ModKey) -> Result<bool, ClientError> {
+        fn is_pressed(&self, char: &str, _mods: ModKey) -> Result<bool, ClientError> {
             if char.len() != 1 {
                 return Err(ClientError::ValidationFailure {
                     performing: "is_pressed".to_owned(),

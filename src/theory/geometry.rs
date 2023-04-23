@@ -1,4 +1,3 @@
-use ggez::mint::Point2;
 use rapier2d::na::{Rotation2, Vector2};
 
 #[derive(Clone, Debug, Default)]
@@ -13,7 +12,6 @@ impl Transform {
     }
 }
 
-
 pub fn rotate_vec2(radian: f32, vector: (f32, f32)) -> (f32, f32) {
     let rotated = Rotation2::new(radian) * Vector2::from([vector.0, vector.1]);
 
@@ -22,20 +20,14 @@ pub fn rotate_vec2(radian: f32, vector: (f32, f32)) -> (f32, f32) {
 
 #[cfg(test)]
 mod tests {
-    use std::f32::consts;
     use crate::theory::geometry::rotate_vec2;
+    use std::f32::consts;
 
     #[test]
     fn rotate_vec2_should_rotate_vec2_correctly() {
-        assert_approx_eq(
-            rotate_vec2(consts::FRAC_PI_2, (0.0, 1.0)),
-            (-1.0, 0.0)
-        );
+        assert_approx_eq(rotate_vec2(consts::FRAC_PI_2, (0.0, 1.0)), (-1.0, 0.0));
 
-        assert_approx_eq(
-            rotate_vec2(-consts::FRAC_PI_2, (0.0, 1.0)),
-            (1.0, 0.0)
-        );
+        assert_approx_eq(rotate_vec2(-consts::FRAC_PI_2, (0.0, 1.0)), (1.0, 0.0));
     }
 
     fn assert_approx_eq(left: (f32, f32), right: (f32, f32)) {

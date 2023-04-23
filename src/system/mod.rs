@@ -1,76 +1,89 @@
-pub mod keyinput_list;
-pub mod state;
-
-use ggez::graphics::{DrawParam, ScreenImage};
-use ggez::{event::EventHandler, glam::vec2, graphics::{self, Color, Rect, StrokeOptions}, mint::Point2, GameError, GameResult, Context};
-use std::collections::HashMap;
-
-use crate::entity::map::{EntityMap, EntityMapKey, EntityMapValue};
-use crate::{
-    entity::Entity,
-    scece::{DefaultScene, SceneTickAction, Scenes},
+use ggez::{
+    event::EventHandler,
+    glam::vec2,
+    graphics::{self, Color, Rect, StrokeOptions},
+    mint::Point2,
+    Context, GameError, GameResult,
 };
+
+use crate::entity::satellite::Satellite;
 use crate::entity::DrawOrigin;
 use crate::gui::GUIEntity;
+use crate::lang::exec::LuaProgramExecutor;
+use crate::system::lang_env::Environment;
+use crate::world::{World, WorldKey, WorldValue};
+use crate::{as_type, entity::Entity};
 
-use self::state::{GameState, KeyPressTiming};
+use self::state::GameState;
+
+pub mod lang_env;
+pub mod state;
 
 pub struct GameSystem {
-    pub entities: EntityMap,
-    pub ui: GUIEntity,
+    pub world: World,
+    pub gui: GUIEntity,
     pub state: GameState,
-    pub scene: Scenes,
-    pub images: HashMap<EntityMapKey, ScreenImage>,
+    pub lua: LuaProgramExecutor,
+    pub satellite_key: WorldKey,
 }
 
 impl GameSystem {
     pub fn new(ctx: &mut ggez::Context) -> GameResult<Self> {
-        let mut state = GameState::new(ctx)?;
-        let mut entities = EntityMap::default();
-        let mut scene = Scenes::DefaultScene(DefaultScene);
-        scene.inner_mut().prepare(ctx, &mut state, &mut entities);
+        let mut world = World::default();
+        let satellite_key = *world.insert(ctx, Satellite::new().typed()).0;
 
         Ok(Self {
-            entities,
-            state,
-            scene,
-            ui: GUIEntity::new(ctx),
-            images: HashMap::new(),
+            world,
+            state: GameState::new(ctx)?,
+            gui: GUIEntity::new(ctx),
+            lua: LuaProgramExecutor::new(),
+            satellite_key,
         })
     }
 
-    pub fn mut_state(&mut self) -> &mut GameState {
-        &mut self.state
+    fn update_entities(&mut self, ctx: &mut ggez::Context) {
+        self.world.update_all_entity(ctx).unwrap();
+    }
+
+    fn update_lua(&mut self, ctx: &mut ggez::Context) {
+        if let Some(program) = &self.state.next_lua_program {
+            self.lua.load(program).unwrap();
+            self.state.next_lua_program = None;
+        }
+
+        let result = self.lua.execute(
+            as_type!(
+                &mut self.world.get_mut(&self.satellite_key).unwrap().entity,
+                Satellite
+            )
+            .unwrap(),
+            &Environment::new(&ctx.keyboard),
+        );
+
+        #[cfg(debug_assertions)]
+        if let Err(err) = result {
+            println!("{err}");
+        }
     }
 }
 
 impl EventHandler<GameError> for GameSystem {
     fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), GameError> {
-        self.ui.update(&mut self.state, ctx)?;
+        self.gui.update(&mut self.state, ctx)?;
 
         while ctx.time.check_update_time(60) {
-            let Some(action) = self.scene.inner_mut().tick(ctx, &mut self.state, &mut self.entities) else { continue; };
-            match action {
-                SceneTickAction::ChangeScene(scene) => {
-                    self.scene = scene;
-                    self.scene
-                        .inner_mut()
-                        .prepare(ctx, &mut self.state, &mut self.entities);
-                }
-            }
+            self.update_lua(ctx);
+            self.update_entities(ctx);
         }
 
         Ok(())
     }
 
     fn draw(&mut self, ctx: &mut ggez::Context) -> Result<(), GameError> {
-        let mut canvas = graphics::Canvas::from_frame(
-            ctx,
-            Color::from([0.0, 0.0, 0.2, 1.0])
-        );
+        let mut canvas = graphics::Canvas::from_frame(ctx, Color::from([0.0, 0.0, 0.2, 1.0]));
 
-        self.entities.iter_mut_entity().try_for_each(
-            |EntityMapValue {
+        self.world.iter_mut_entity().try_for_each(
+            |WorldValue {
                  entity,
                  ref mut screen_image,
              }| {
@@ -87,7 +100,7 @@ impl EventHandler<GameError> for GameSystem {
                 let offset = vec2(draw.size.x / 2.0, draw.size.y / 2.0);
                 let offset_screen = match draw.draw_origin {
                     DrawOrigin::World => vec2(1920.0 / 2.0, 1080.0 / 2.0),
-                    DrawOrigin::ScreenAbsolute => vec2(0.0, 0.0)
+                    DrawOrigin::ScreenAbsolute => vec2(0.0, 0.0),
                 };
 
                 canvas.draw(
@@ -118,12 +131,12 @@ impl EventHandler<GameError> for GameSystem {
             },
         )?;
 
-        self.ui.draw(&mut canvas, &self.state)?;
+        self.gui.draw(&mut canvas, &self.state)?;
         canvas.finish(ctx)
     }
 
     fn text_input_event(&mut self, _ctx: &mut Context, character: char) -> Result<(), GameError> {
-        self.ui.on_text_input(character);
+        self.gui.on_text_input(character);
         Ok(())
     }
 }

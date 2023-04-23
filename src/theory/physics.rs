@@ -1,10 +1,9 @@
 use super::geometry::Transform;
-use crate::scece::game::input::Control;
-use rapier2d::na::{Isometry2, Point2, Rotation2, Vector2};
+use rapier2d::na::Vector2;
 use rapier2d::prelude::*;
-use rlua::MetaMethod::Mul;
-use std::f32::consts::PI;
+
 use crate::theory::geometry::rotate_vec2;
+use std::fmt::{Debug, Formatter};
 
 #[derive(Debug)]
 pub struct RigidBodyProperty {
@@ -20,20 +19,13 @@ pub struct Physics(RigidBodyHandle);
 pub struct PhysicsController<'a>(pub &'a mut RigidBody);
 
 impl<'a> PhysicsController<'a> {
-    pub(self) fn new(physics: &'a mut RigidBody) -> Self {
-        PhysicsController(physics)
-    }
-
     pub fn apply_force(&mut self, at: Option<(f32, f32)>, vector: (f32, f32)) {
         match at {
-            Some(at) => {
-                self.0
-                    .add_force_at_point(
-                        tuple_to_vec(vector),
-                        (tuple_to_vec(at) + self.0.position().translation.vector).into(),
-                        true
-                    )
-            }
+            Some(at) => self.0.add_force_at_point(
+                tuple_to_vec(vector),
+                (tuple_to_vec(at) + self.0.position().translation.vector).into(),
+                true,
+            ),
             None => self.0.apply_impulse(tuple_to_vec(vector), true),
         }
     }
@@ -67,6 +59,18 @@ pub struct PhysicalWorld {
     impulse_joint_set: ImpulseJointSet,
     multibody_joint_set: MultibodyJointSet,
     ccd_solver: CCDSolver,
+}
+
+impl Default for PhysicalWorld {
+    fn default() -> Self {
+        PhysicalWorld::new()
+    }
+}
+
+impl Debug for PhysicalWorld {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<PhysicalWorld: {}>", self.rigidbody_set.len())
+    }
 }
 
 impl PhysicalWorld {

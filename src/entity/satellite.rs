@@ -1,11 +1,10 @@
-use std::{collections::HashMap, str::FromStr, f32::consts::PI};
+use std::{collections::HashMap, str::FromStr};
 
 use ggez::{
-    glam::{vec2, Vec2},
+    glam::Vec2,
     graphics::{self, Color},
     Context,
 };
-use rapier2d::prelude::Rotation;
 
 use super::{DrawInstruction, Entity, TypedEntity};
 use crate::entity::RigidBody;
@@ -18,14 +17,14 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct Satelite {
+pub struct Satellite {
     pub physics: Option<Physics>,
     pub transform: Transform,
-    pub booster: HashMap<SateliteBoosters, f32>,
+    pub booster: HashMap<SatelliteBoosters, f32>,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum SateliteBoosters {
+pub enum SatelliteBoosters {
     BL,
     BR,
     FL,
@@ -34,24 +33,30 @@ pub enum SateliteBoosters {
     WR,
 }
 
-impl Satelite {
+impl Satellite {
     pub fn new() -> Self {
         Self {
             physics: None,
             transform: Transform::default(),
             booster: HashMap::from([
-                (SateliteBoosters::BL, 0.0),
-                (SateliteBoosters::BR, 0.0),
-                (SateliteBoosters::FL, 0.0),
-                (SateliteBoosters::FR, 0.0),
-                (SateliteBoosters::WL, 0.0),
-                (SateliteBoosters::WR, 0.0),
+                (SatelliteBoosters::BL, 0.0),
+                (SatelliteBoosters::BR, 0.0),
+                (SatelliteBoosters::FL, 0.0),
+                (SatelliteBoosters::FR, 0.0),
+                (SatelliteBoosters::WL, 0.0),
+                (SatelliteBoosters::WR, 0.0),
             ]),
         }
     }
 }
 
-impl Entity for Satelite {
+impl Default for Satellite {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Entity for Satellite {
     fn update(&mut self, _ctx: &mut Context) -> ggez::GameResult {
         Ok(())
     }
@@ -62,7 +67,7 @@ impl Entity for Satelite {
         state: &GameState,
     ) -> ggez::GameResult<DrawInstruction> {
         canvas.draw(
-            &state.satelite_svg,
+            &state.satellite_svg,
             graphics::DrawParam::from(Vec2::new(0.0, 0.0))
                 .color(Color::WHITE)
                 .scale(Vec2::new(0.5, 0.5)),
@@ -72,19 +77,20 @@ impl Entity for Satelite {
             position: self.transform.location.into(),
             angle: self.transform.angle,
             size: (
-                (state.satelite_svg.width() as f32 / 2.0),
-                (state.satelite_svg.height() as f32 / 2.0),
-            ).into(),
+                (state.satellite_svg.width() as f32 / 2.0),
+                (state.satellite_svg.height() as f32 / 2.0),
+            )
+                .into(),
             ..Default::default()
         })
     }
 
     fn typed(self) -> TypedEntity {
-        TypedEntity::Satelite(self)
+        TypedEntity::Satellite(self)
     }
 }
 
-impl RigidBody for Satelite {
+impl RigidBody for Satellite {
     fn get_property(&self) -> RigidBodyProperty {
         RigidBodyProperty {
             mass: 1000.0,
@@ -102,13 +108,13 @@ impl RigidBody for Satelite {
     }
 
     fn update_physics(&mut self, controller: &mut PhysicsController) {
-        use SateliteBoosters::*;
+        use SatelliteBoosters::*;
 
         fn relative(x: f32, y: f32) -> (f32, f32) {
             (141.0 / 2.0 * x, 48.0 / 2.0 * y)
         }
 
-        let on = |location: SateliteBoosters| -> f32 {
+        let on = |location: SatelliteBoosters| -> f32 {
             *self.booster.get(&location).unwrap() * 250000.0
         };
 
@@ -136,13 +142,13 @@ impl RigidBody for Satelite {
     }
 }
 
-impl ProgramClient for Satelite {
+impl ProgramClient for Satellite {
     fn is_valid_booster(&self, name: &str) -> bool {
-        name.parse::<SateliteBoosters>().is_ok()
+        name.parse::<SatelliteBoosters>().is_ok()
     }
 
     fn boost(&mut self, location: &str, power: f32) -> Result<(), ClientError> {
-        let Ok(booster) = location.parse::<SateliteBoosters>() else {
+        let Ok(booster) = location.parse::<SatelliteBoosters>() else {
             return Err(ClientError::ValidationFailure{
                 performing: "boosting".to_string(),
                 part: "location".to_string(),
@@ -160,13 +166,11 @@ impl ProgramClient for Satelite {
 
         self.booster.insert(booster, power);
 
-        // dbg!((&booster, &power));
-
         Ok(())
     }
 }
 
-impl FromStr for SateliteBoosters {
+impl FromStr for SatelliteBoosters {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
