@@ -16,7 +16,7 @@ pub trait Scene {
     fn prepare(&mut self, ctx: &Context, state: &mut GameState, entity_map: &mut EntityMap);
     fn tick(
         &mut self,
-        ctx: &Context,
+        ctx: &mut Context,
         state: &mut GameState,
         entity_map: &mut EntityMap,
     ) -> Option<SceneTickAction>;
@@ -61,7 +61,7 @@ impl Scene for DefaultScene {
 
     fn tick(
         &mut self,
-        ctx: &Context,
+        _ctx: &mut Context,
         _state: &mut GameState,
         entity_map: &mut EntityMap,
     ) -> Option<SceneTickAction> {

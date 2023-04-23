@@ -63,6 +63,11 @@ impl LuaProgramExecutor {
     {
         let reported = self.runtime.context(|ctx| {
             let global = ctx.globals();
+
+            if !(global.contains_key("main").map_err(map_execute_result)?) {
+                return Ok("".to_string());
+            }
+
             let main: Function = global.get("main").map_err(map_execute_result)?;
 
             ctx.scope(|scope| {

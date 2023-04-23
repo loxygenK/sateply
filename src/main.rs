@@ -2,11 +2,14 @@
 #![allow(irrefutable_let_patterns)]
 
 pub mod entity;
+pub mod exteditor;
+pub mod gui;
 pub mod lang;
 pub mod scece;
 pub mod system;
 pub mod theory;
 pub mod utils;
+pub mod file_selector;
 
 use std::{env, path::PathBuf};
 
@@ -16,7 +19,8 @@ use ggez::{
 };
 use system::GameSystem;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let resource_dir = if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
         let mut path = PathBuf::from(manifest_dir);
         path.push("assets");
