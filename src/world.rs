@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
-use crate::entity::{RigidBody, TypedEntity};
-use crate::theory::physics::{PhysicalWorld, Physics, PhysicsController};
+use crate::entity::TypedEntity;
+use crate::theory::physics::{PhysicalWorld};
 use ggez::graphics::ScreenImage;
 use ggez::{graphics, Context, GameResult};
 use rand::{thread_rng, RngCore};
-use rapier2d::crossbeam::channel::internal::SelectHandle;
 
 pub type WorldKey = u32;
 
@@ -103,6 +102,7 @@ impl World {
 #[macro_export]
 macro_rules! as_type {
     (& $entity: expr, $type: ident) => {
+        #[allow(irrefutable_let_patterns)]
         if let $crate::entity::TypedEntity::$type(inner) = &$entity {
             Some(inner)
         } else {
@@ -111,6 +111,7 @@ macro_rules! as_type {
     };
 
     (&mut $entity: expr, $type: ident) => {
+        #[allow(irrefutable_let_patterns)]
         if let $crate::entity::TypedEntity::$type(inner) = &mut $entity {
             Some(inner)
         } else {

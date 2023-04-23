@@ -1,6 +1,6 @@
-use ggez::graphics::{DrawParam, ScreenImage};
+
 use ggez::{event::EventHandler, glam::vec2, graphics::{self, Color, Rect, StrokeOptions}, mint::Point2, GameError, GameResult, Context};
-use std::collections::HashMap;
+
 
 use crate::world::{World, WorldKey, WorldValue};
 use crate::{entity::Entity, as_type};
@@ -9,9 +9,9 @@ use crate::entity::satellite::Satellite;
 use crate::gui::GUIEntity;
 use crate::lang::exec::LuaProgramExecutor;
 use crate::system::lang_env::Environment;
-use crate::traitext::ExpectOnlyOneExt;
 
-use self::state::{GameState, KeyPressTiming};
+
+use self::state::{GameState};
 
 pub mod state;
 pub mod lang_env;
@@ -46,7 +46,7 @@ impl GameSystem {
 
     fn update_lua(&mut self, ctx: &mut ggez::Context) {
         if let Some(program) = &self.state.next_lua_program {
-            self.lua.load(&program);
+            self.lua.load(program).unwrap();
             self.state.next_lua_program = None;
         }
 

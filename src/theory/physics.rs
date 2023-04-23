@@ -1,9 +1,9 @@
 use super::geometry::Transform;
-use rapier2d::na::{Isometry2, Point2, Rotation2, Vector2};
+use rapier2d::na::{Vector2};
 use rapier2d::prelude::*;
-use rlua::MetaMethod::Mul;
-use std::f32::consts::PI;
-use std::fmt::{Debug, Formatter, Write};
+
+
+use std::fmt::{Debug, Formatter};
 use crate::theory::geometry::rotate_vec2;
 
 #[derive(Debug)]
@@ -20,10 +20,6 @@ pub struct Physics(RigidBodyHandle);
 pub struct PhysicsController<'a>(pub &'a mut RigidBody);
 
 impl<'a> PhysicsController<'a> {
-    pub(self) fn new(physics: &'a mut RigidBody) -> Self {
-        PhysicsController(physics)
-    }
-
     pub fn apply_force(&mut self, at: Option<(f32, f32)>, vector: (f32, f32)) {
         match at {
             Some(at) => {

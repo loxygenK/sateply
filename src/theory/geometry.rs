@@ -1,4 +1,4 @@
-use ggez::mint::Point2;
+
 use rapier2d::na::{Rotation2, Vector2};
 
 #[derive(Clone, Debug, Default)]

@@ -1,6 +1,3 @@
-#![allow(unused)]
-#![allow(irrefutable_let_patterns)]
-
 pub mod entity;
 pub mod gui;
 pub mod lang;

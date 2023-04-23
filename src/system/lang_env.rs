@@ -1,6 +1,6 @@
-use ggez::{Context, winit::event::VirtualKeyCode, input::keyboard::KeyboardContext};
+use ggez::{winit::event::VirtualKeyCode, input::keyboard::KeyboardContext};
 
-use crate::lang::{ModKey, ProgramEnvironment, api::APIError, ClientError};
+use crate::lang::{ModKey, ProgramEnvironment, ClientError};
 
 macro_rules! match_keycode {
     ( $value: expr => $($key: ident),+ ) => {
@@ -32,7 +32,7 @@ pub struct Environment<'ctx> {
     keyboard_ctx: &'ctx KeyboardContext,
 }
 impl ProgramEnvironment for Environment<'_> {
-    fn is_pressed(&self, char: &str, mods: ModKey) -> Result<bool, ClientError> {
+    fn is_pressed(&self, char: &str, _mods: ModKey) -> Result<bool, ClientError> {
         let keycode = map_char_to_keycode(char)
             .ok_or(ClientError::ValidationFailure {
                 performing: "Key press check".to_string(),

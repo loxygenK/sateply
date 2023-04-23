@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::{PathBuf};
 use std::sync::{Arc, Mutex};
 use rfd::AsyncFileDialog;
 
@@ -8,12 +8,8 @@ pub struct FileDialog {
 }
 
 impl FileDialog {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     pub fn show(&mut self) {
-        let mut selected_file = self.selected_file.clone();
+        let selected_file = self.selected_file.clone();
 
         tokio::spawn(async move {
             let selected = AsyncFileDialog::default()
@@ -22,7 +18,7 @@ impl FileDialog {
                 .await;
 
             let mut selected_file = selected_file.lock().unwrap();
-            *selected_file = selected.as_ref().map(|file| file.path().to_path_buf().clone());
+            *selected_file = selected.as_ref().map(|file| file.path().to_path_buf());
         });
     }
 

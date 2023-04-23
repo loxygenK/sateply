@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use rlua::{prelude::*, Result as LuaResult, Table, Scope};
+use rlua::{Result as LuaResult, Table, Scope};
 
 use super::{ClientError, ProgramClient, ProgramEnvironment};
 

@@ -1,12 +1,12 @@
-use ggez::graphics::Canvas;
-use ggez::{graphics, GameResult};
-use std::collections::HashMap;
 
-use crate::world::{World, WorldKey};
-use crate::theory::physics::PhysicalWorld;
+use ggez::{graphics, GameResult};
+
+
+
+
 
 pub struct GameState {
-    pub satelite_svg: graphics::Image,
+    pub satellite_svg: graphics::Image,
     pub next_lua_program: Option<String>,
 }
 
@@ -19,10 +19,10 @@ pub enum KeyPressTiming {
 
 impl GameState {
     pub fn new(ctx: &mut ggez::Context) -> GameResult<Self> {
-        let satelite_svg = graphics::Image::from_path(ctx, "/imgs/satellite.png")?;
+        let satellite_svg = graphics::Image::from_path(ctx, "/imgs/satellite.png")?;
 
         Ok(Self {
-            satelite_svg,
+            satellite_svg,
             next_lua_program: None
         })
     }

@@ -1,9 +1,9 @@
-use std::sync::{Arc, Mutex};
+
 
 use rlua::{prelude::*, StdLib, Table};
-use rlua::{Error, Function, Result as LuaResult};
+use rlua::{Error, Function};
 
-use crate::lang::api::boost;
+
 
 use super::api::register_api;
 use super::{ProgramClient, ProgramEnvironment};
@@ -34,6 +34,12 @@ pub enum ExecutionError {
 
 pub struct LuaProgramExecutor {
     runtime: Lua
+}
+
+impl Default for LuaProgramExecutor {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl LuaProgramExecutor {
@@ -84,7 +90,7 @@ impl LuaProgramExecutor {
         if reported.is_empty() {
             Ok(())
         } else {
-            Err(ExecutionError::Reported(reported.to_string()))
+            Err(ExecutionError::Reported(reported))
         }
     }
 }
@@ -191,7 +197,7 @@ mod tests {
 
     struct Environment;
     impl ProgramEnvironment for Environment {
-        fn is_pressed(&self, char: &str, mods: ModKey) -> Result<bool, ClientError> {
+        fn is_pressed(&self, char: &str, _mods: ModKey) -> Result<bool, ClientError> {
             if char.len() != 1 {
                 return Err(ClientError::ValidationFailure {
                     performing: "is_pressed".to_owned(),

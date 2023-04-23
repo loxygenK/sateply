@@ -1,11 +1,11 @@
 use std::fmt::{Debug, Formatter};
-use std::io::Read;
+
 use ggegui::{egui, Gui};
 use ggez::{Context, GameResult};
-use ggez::context::Has;
-use ggez::glam::{Vec2, vec2};
+
+use ggez::glam::{Vec2};
 use ggez::graphics::{Canvas, DrawParam};
-use crate::entity::{DrawInstruction, DrawOrigin, Entity, TypedEntity};
+use crate::entity::{DrawInstruction, DrawOrigin};
 use crate::gui::file_selector::FileDialog;
 use crate::system::state::GameState;
 
@@ -51,7 +51,7 @@ impl GUIEntity {
         Ok(())
     }
 
-    pub fn draw(&self, canvas: &mut Canvas, state: &GameState) -> GameResult<DrawInstruction> {
+    pub fn draw(&self, canvas: &mut Canvas, _state: &GameState) -> GameResult<DrawInstruction> {
         canvas.draw(
             &self.gui,
             DrawParam::default().dest(Vec2::ZERO),

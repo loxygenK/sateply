@@ -1,7 +1,5 @@
-use std::collections::HashMap;
+use ggez::{glam::Vec2, graphics::Canvas, GameResult, Context};
 
-use ggez::{glam::Vec2, graphics::{Canvas, Rect}, GameResult, Context};
-use rand::{thread_rng, RngCore};
 use crate::entity::satellite::Satellite;
 
 use crate::system::state::GameState;
