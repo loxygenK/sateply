@@ -37,7 +37,7 @@ pub fn is_pressed<T: ProgramEnvironment>(env: &T, char: String, mods: u8) -> API
 }
 
 pub fn register_api<'global, 'scope, T, E>(
-    global: &Table<'global>,
+    api_table: &Table<'global>,
     scope: &Scope<'global, 'scope>,
     client: &'scope mut T,
     env: &'scope E,
@@ -50,24 +50,57 @@ where
     let client = Arc::new(Mutex::new(client));
     let env = Arc::new(Mutex::new(env));
 
-    let cloned_client = client.clone();
-    global.set(
-        "api_boost",
-        scope.create_function(move |_, (location, power)| {
-            // api_boost.lock().unwrap().boost(location, power).expect("TODO: panic message");
-            boost(*cloned_client.lock().unwrap(), location, power).expect("");
-            Ok(())
-        })?,
-    )?;
+    macro_rules! register {
+        ($name: ident(client, env, $( $arg: ident ),+)) => {
+            let cloned_client = client.clone();
+            let cloned_env = env.clone();
+            api_table.set(
+                stringify!($name),
+                scope.create_function(move |_, ($( $arg ),+)| {
+                    Ok($name(
+                        *cloned_client.lock().unwrap(),
+                        *cloned_env.lock().unwrap(),
+                        $( $arg ),+
+                    ).unwrap())
+                })?,
+            )?;
+        };
+        ($name: ident(client, $( $arg: ident ),+)) => {
+            let cloned_client = client.clone();
+            api_table.set(
+                stringify!($name),
+                scope.create_function(move |_, ($( $arg ),+)| {
+                    Ok($name(
+                        *cloned_client.lock().unwrap(),
+                        $( $arg ),+
+                    ).unwrap())
+                })?,
+            )?;
+        };
+        ($name: ident(env, $( $arg: ident ),+)) => {
+            let cloned_env = env.clone();
+            api_table.set(
+                stringify!($name),
+                scope.create_function(move |_, ($( $arg ),+)| {
+                    Ok($name(
+                        *cloned_env.lock().unwrap(),
+                        $( $arg ),+
+                    ).unwrap())
+                })?,
+            )?;
+        };
+        ($name: ident($( $arg: ident ),+)) => {
+            api_table.set(
+                stringify!($name),
+                scope.create_function(move |_, ($( $arg ),+)| {
+                    Ok($name($( $arg ),+).unwrap())
+                })?,
+            )?;
+        };
+    }
 
-    let cloned_client = client.clone();
-    let cloned_scope = scope.clone();
-    global.set(
-        "api_is_pressed",
-        scope.create_function(move |_, (key)| {
-            Ok(is_pressed(*env.lock().unwrap(), key, 0).expect(""))
-        })?,
-    )?;
+    register!(boost(client, location, power));
+    register!(is_pressed(env, location, power));
 
     Ok(())
 }

@@ -68,6 +68,10 @@ impl World {
         Ok(())
     }
 
+    pub fn get_mut(&mut self, key: &WorldKey) -> Option<&mut WorldValue> {
+        self.map.get_mut(key)
+    }
+
     pub fn insert(
         &mut self,
         ctx: &Context,
@@ -97,24 +101,20 @@ impl World {
 }
 
 #[macro_export]
-macro_rules! extract_by_entity {
-    ($map: expr, $type: ident) => {{
-        $map.iter_entity().flat_map(|entity| {
-            if let $crate::entity::TypedEntity::$type(inner) = &entity.entity {
-                Some(inner)
-            } else {
-                None
-            }
-        })
-    }};
+macro_rules! as_type {
+    (& $entity: expr, $type: ident) => {
+        if let $crate::entity::TypedEntity::$type(inner) = &$entity {
+            Some(inner)
+        } else {
+            None
+        }
+    };
 
-    (mut $map: expr, $type: ident) => {{
-        $map.iter_mut_entity().flat_map(|entity| {
-            if let $crate::entity::TypedEntity::$type(inner) = &mut entity.entity {
-                Some(inner)
-            } else {
-                None
-            }
-        })
-    }};
+    (&mut $entity: expr, $type: ident) => {
+        if let $crate::entity::TypedEntity::$type(inner) = &mut $entity {
+            Some(inner)
+        } else {
+            None
+        }
+    };
 }

@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use rlua::{prelude::*, StdLib};
+use rlua::{prelude::*, StdLib, Table};
 use rlua::{Error, Function, Result as LuaResult};
 
 use crate::lang::api::boost;
@@ -70,8 +70,10 @@ impl LuaProgramExecutor {
 
             let main: Function = global.get("main").map_err(map_execute_result)?;
 
+            let api_table: Table = ctx.load("api = {{}}; return api").eval().map_err(map_execute_result)?;
+
             ctx.scope(|scope| {
-                register_api(&global, scope, client, env).map_err(map_execute_result)?;
+                register_api(&api_table, scope, client, env).map_err(map_execute_result)?;
 
                 let reported: String = main.call("").map_err(map_execute_result)?;
 

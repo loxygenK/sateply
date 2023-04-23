@@ -160,8 +160,6 @@ impl ProgramClient for Satellite {
 
         self.booster.insert(booster, power);
 
-        // dbg!((&booster, &power));
-
         Ok(())
     }
 }

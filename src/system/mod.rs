@@ -3,7 +3,7 @@ use ggez::{event::EventHandler, glam::vec2, graphics::{self, Color, Rect, Stroke
 use std::collections::HashMap;
 
 use crate::world::{World, WorldKey, WorldValue};
-use crate::{entity::Entity, extract_by_entity};
+use crate::{entity::Entity, as_type};
 use crate::entity::DrawOrigin;
 use crate::entity::satellite::Satellite;
 use crate::gui::GUIEntity;
@@ -20,20 +20,21 @@ pub struct GameSystem {
     pub world: World,
     pub gui: GUIEntity,
     pub state: GameState,
-    pub lua: LuaProgramExecutor
+    pub lua: LuaProgramExecutor,
+    pub satellite_key: WorldKey,
 }
 
 impl GameSystem {
     pub fn new(ctx: &mut ggez::Context) -> GameResult<Self> {
         let mut world = World::default();
-
-        world.insert(ctx, Satellite::new().typed());
+        let satellite_key = *world.insert(ctx, Satellite::new().typed()).0;
 
         Ok(Self {
             world,
             state: GameState::new(ctx)?,
             gui: GUIEntity::new(ctx),
             lua: LuaProgramExecutor::new(),
+            satellite_key
         })
     }
 
@@ -49,10 +50,13 @@ impl GameSystem {
             self.state.next_lua_program = None;
         }
 
-        let mut satelite = extract_by_entity!(mut self.world, Satellite)
-            .unwrap_only_one();
-
-        let result = self.lua.execute(satelite, &Environment::new(&ctx.keyboard));
+        let result = self.lua.execute(
+            as_type!(
+                &mut self.world.get_mut(&self.satellite_key).unwrap().entity,
+                Satellite
+            ).unwrap(),
+            &Environment::new(&ctx.keyboard)
+        );
 
         #[cfg(debug_assertions)]
         if let Err(err) = result {
