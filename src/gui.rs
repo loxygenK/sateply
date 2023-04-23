@@ -1,14 +1,17 @@
 use std::fmt::{Debug, Formatter};
+use std::io::Read;
 use ggegui::{egui, Gui};
 use ggez::{Context, GameResult};
+use ggez::context::Has;
 use ggez::glam::{Vec2, vec2};
 use ggez::graphics::{Canvas, DrawParam};
 use crate::entity::{DrawInstruction, DrawOrigin, Entity, TypedEntity};
+use crate::file_selector::FileDialog;
 use crate::system::state::GameState;
 
 pub struct GUIEntity {
     gui: Gui,
-    typed: String
+    file_dialog: FileDialog
 }
 
 impl Debug for GUIEntity {
@@ -21,26 +24,27 @@ impl GUIEntity {
     pub fn new(ctx: &Context) -> Self {
         GUIEntity {
             gui: Gui::new(ctx),
-            typed: String::new(),
+            file_dialog: FileDialog::default()
         }
     }
 }
 
 impl GUIEntity {
-    pub fn update(&mut self, ctx: &mut Context) -> GameResult {
+    pub fn update(&mut self, state: &mut GameState, ctx: &mut Context) -> GameResult {
         let gui_ctx = self.gui.ctx();
 
         egui::Window::new("Load program").show(&gui_ctx, |ui| {
             ui.label("Path of the program");
-            let textbox = ui.add(egui::TextEdit::singleline(&mut self.typed));
-            if textbox.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-                println!("Typed: {}", self.typed);
-            }
-            if ui.button("button").clicked() {
-                println!("button clicked");
+            if ui.button("Open the program").clicked() {
+                self.file_dialog.show();
             }
         });
         self.gui.update(ctx);
+
+        if let Some(program) = self.file_dialog.read_selected() {
+            state.load_lua_program(&program);
+            self.file_dialog.forget_selected();
+        }
 
         Ok(())
     }
@@ -48,13 +52,14 @@ impl GUIEntity {
     pub fn draw(&self, canvas: &mut Canvas, state: &GameState) -> GameResult<DrawInstruction> {
         canvas.draw(
             &self.gui,
-            DrawParam::default(),
+            DrawParam::default().dest(Vec2::ZERO),
         );
 
         Ok(DrawInstruction {
             size: (1920.0, 1080.0).into(),
             draw_origin: DrawOrigin::ScreenAbsolute,
-            ..Default::default()
+            position: Vec2::ZERO,
+            angle: 0.0
         })
     }
 

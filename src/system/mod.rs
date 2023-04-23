@@ -21,8 +21,6 @@ pub struct GameSystem {
     pub state: GameState,
     pub scene: Scenes,
     pub images: HashMap<EntityMapKey, ScreenImage>,
-    pub frame_buffer: ScreenImage,
-    pub frame_count: u64,
 }
 
 impl GameSystem {
@@ -38,8 +36,6 @@ impl GameSystem {
             scene,
             ui: GUIEntity::new(ctx),
             images: HashMap::new(),
-            frame_buffer: graphics::ScreenImage::new(&ctx.gfx, None, 1.0, 1.0, 1),
-            frame_count: 0
         })
     }
 
@@ -50,9 +46,9 @@ impl GameSystem {
 
 impl EventHandler<GameError> for GameSystem {
     fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), GameError> {
-        while ctx.time.check_update_time(60) {
-            self.ui.update(ctx)?;
+        self.ui.update(&mut self.state, ctx)?;
 
+        while ctx.time.check_update_time(60) {
             let Some(action) = self.scene.inner_mut().tick(ctx, &mut self.state, &mut self.entities) else { continue; };
             match action {
                 SceneTickAction::ChangeScene(scene) => {
@@ -68,10 +64,8 @@ impl EventHandler<GameError> for GameSystem {
     }
 
     fn draw(&mut self, ctx: &mut ggez::Context) -> Result<(), GameError> {
-        let buf_image_instance = self.frame_buffer.image(&ctx.gfx);
-        let mut canvas = graphics::Canvas::from_image(
-            &ctx.gfx,
-            buf_image_instance.clone(),
+        let mut canvas = graphics::Canvas::from_frame(
+            ctx,
             Color::from([0.0, 0.0, 0.2, 1.0])
         );
 
@@ -125,11 +119,6 @@ impl EventHandler<GameError> for GameSystem {
         )?;
 
         self.ui.draw(&mut canvas, &self.state)?;
-
-        canvas.finish(ctx)?;
-
-        let mut canvas = graphics::Canvas::from_frame(ctx, None);
-        canvas.draw(&buf_image_instance, DrawParam::default());
         canvas.finish(ctx)
     }
 

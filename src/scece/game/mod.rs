@@ -20,50 +20,7 @@ pub struct GameScene {
     execute_by_frame: bool,
 }
 impl Scene for GameScene {
-    fn prepare(&mut self, _ctx: &Context, _state: &mut GameState, entity_map: &mut EntityMap) {
-        self.executor.load(r#"
-            ON = 1
-            OFF = 0
-
-            function main()
-                boosted = false
-
-                if api_is_pressed("w") then
-                    api_boost("WL", ON)
-                    api_boost("WR", ON)
-                    boosted = true
-                end
-
-                if api_is_pressed("s") then
-                    api_boost("FL", ON)
-                    api_boost("FR", ON)
-                    boosted = true
-                end
-
-                if api_is_pressed("a") then
-                    api_boost("FL", ON)
-                    api_boost("BR", ON)
-                    boosted = true
-                end
-
-                if api_is_pressed("d") then
-                    api_boost("BL", ON)
-                    api_boost("FR", ON)
-                    boosted = true
-                end
-
-                if not boosted then
-                    api_boost("BL", OFF)
-                    api_boost("BR", OFF)
-                    api_boost("FL", OFF)
-                    api_boost("FR", OFF)
-                    api_boost("WL", OFF)
-                    api_boost("WR", OFF)
-                end
-
-                return ""
-            end
-        "#);
+    fn prepare(&mut self, _ctx: &Context, state: &mut GameState, entity_map: &mut EntityMap) {
     }
 
     fn tick(
@@ -75,6 +32,11 @@ impl Scene for GameScene {
         entity_map
             .update_all_entity(ctx, &mut state.physical_world)
             .unwrap();
+
+        if let Some(program) = &state.next_lua_program {
+            self.executor.load(&program);
+            state.next_lua_program = None;
+        }
 
         if self.execute_by_frame {
             self.execute(ctx, entity_map);

@@ -8,6 +8,7 @@ use crate::theory::physics::PhysicalWorld;
 pub struct GameState {
     pub physical_world: PhysicalWorld,
     pub satelite_svg: graphics::Image,
+    pub next_lua_program: Option<String>,
 }
 
 #[derive(PartialEq, Eq)]
@@ -24,8 +25,13 @@ impl GameState {
         Ok(Self {
             physical_world: PhysicalWorld::new(),
             satelite_svg,
+            next_lua_program: None
         })
     }
 
     pub fn tick_state(&mut self) {}
+
+    pub fn load_lua_program(&mut self, program: &str) {
+        self.next_lua_program = Some(program.to_string());
+    }
 }
