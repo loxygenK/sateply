@@ -16,7 +16,10 @@ pub struct WorldValue {
 }
 
 #[derive(Default, Debug)]
-pub struct World(HashMap<WorldKey, WorldValue>);
+pub struct World {
+    map: HashMap<WorldKey, WorldValue>,
+    physical_world: PhysicalWorld,
+}
 
 pub struct EntityMapEntry<'a> {
     pub key: WorldKey,
@@ -24,26 +27,19 @@ pub struct EntityMapEntry<'a> {
 }
 
 impl World {
-    pub fn inner(&self) -> &HashMap<WorldKey, WorldValue> {
-        &self.0
-    }
-
-    pub fn iter_entity(&self) -> impl Iterator<Item = &WorldValue> {
-        self.0.values()
-    }
-
     pub fn iter_mut_entity(&mut self) -> impl Iterator<Item = &mut WorldValue> {
-        self.0.values_mut()
+        self.map.values_mut()
     }
 
-    pub fn update_all_entity(&mut self, ctx: &mut Context, physical_world: &mut PhysicalWorld) -> GameResult {
-        self.iter_mut_entity()
+    pub fn update_all_entity(&mut self, ctx: &mut Context) -> GameResult {
+        self.map
+            .values_mut()
             .try_for_each(|WorldValue { entity, .. }| {
                 let Some(physics) = entity.as_mut_rigidbody() else {
                     return entity.inner_mut().update(ctx);
                 };
 
-                let mut controller = physical_world.get(physics.get_mut_physics()).unwrap();
+                let mut controller = self.physical_world.get(physics.get_mut_physics()).unwrap();
 
                 // TODO: This is not good I guess..
                 controller.0.reset_forces(true);
@@ -53,15 +49,16 @@ impl World {
                 Ok(())
             })?;
 
-        physical_world.tick();
+        self.physical_world.tick();
 
-        self.iter_mut_entity()
+        self.map
+            .values_mut()
             .for_each(|WorldValue { entity, .. }| {
                 let Some(physics) = entity.as_mut_rigidbody() else {
                     return;
                 };
 
-                let controller = physical_world.get(physics.get_mut_physics()).unwrap();
+                let controller = self.physical_world.get(physics.get_mut_physics()).unwrap();
                 let transform = controller.to_transform();
 
                 physics.report_transform(transform);
@@ -74,15 +71,20 @@ impl World {
     pub fn insert(
         &mut self,
         ctx: &Context,
-        entity: TypedEntity,
+        mut entity: TypedEntity,
     ) -> (&WorldKey, &WorldValue) {
         let mut rng = thread_rng();
 
+        if let Some(physics_impl) = entity.as_mut_rigidbody() {
+            let physics_handle = self.physical_world.register(physics_impl.get_property());
+            physics_impl.register_physics(physics_handle);
+        }
+
         let mut key = rng.next_u32();
-        while self.0.contains_key(&key) {
+        while self.map.contains_key(&key) {
             key = rng.next_u32();
         }
-        self.0.insert(
+        self.map.insert(
             key,
             WorldValue {
                 entity,
@@ -90,7 +92,7 @@ impl World {
             },
         );
 
-        self.0.get_key_value(&key).unwrap()
+        self.map.get_key_value(&key).unwrap()
     }
 }
 

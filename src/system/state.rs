@@ -6,7 +6,6 @@ use crate::world::{World, WorldKey};
 use crate::theory::physics::PhysicalWorld;
 
 pub struct GameState {
-    pub physical_world: PhysicalWorld,
     pub satelite_svg: graphics::Image,
     pub next_lua_program: Option<String>,
 }
@@ -23,7 +22,6 @@ impl GameState {
         let satelite_svg = graphics::Image::from_path(ctx, "/imgs/satellite.png")?;
 
         Ok(Self {
-            physical_world: PhysicalWorld::new(),
             satelite_svg,
             next_lua_program: None
         })

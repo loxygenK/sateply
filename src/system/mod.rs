@@ -1,19 +1,20 @@
-pub mod keyinput_list;
-pub mod state;
-
 use ggez::graphics::{DrawParam, ScreenImage};
 use ggez::{event::EventHandler, glam::vec2, graphics::{self, Color, Rect, StrokeOptions}, mint::Point2, GameError, GameResult, Context};
 use std::collections::HashMap;
 
 use crate::world::{World, WorldKey, WorldValue};
-use crate::{entity::Entity, extract_by_entity, scece::{DefaultScene, SceneTickAction, Scenes}};
+use crate::{entity::Entity, extract_by_entity};
 use crate::entity::DrawOrigin;
+use crate::entity::satellite::Satellite;
 use crate::gui::GUIEntity;
 use crate::lang::exec::LuaProgramExecutor;
-use crate::scece::game::lang_env::Environment;
+use crate::system::lang_env::Environment;
 use crate::traitext::ExpectOnlyOneExt;
 
 use self::state::{GameState, KeyPressTiming};
+
+pub mod state;
+pub mod lang_env;
 
 pub struct GameSystem {
     pub world: World,
@@ -24,8 +25,12 @@ pub struct GameSystem {
 
 impl GameSystem {
     pub fn new(ctx: &mut ggez::Context) -> GameResult<Self> {
+        let mut world = World::default();
+
+        world.insert(ctx, Satellite::new().typed());
+
         Ok(Self {
-            world: World::default(),
+            world,
             state: GameState::new(ctx)?,
             gui: GUIEntity::new(ctx),
             lua: LuaProgramExecutor::new(),
@@ -34,7 +39,7 @@ impl GameSystem {
 
     fn update_entities(&mut self, ctx: &mut ggez::Context) {
         self.world
-            .update_all_entity(ctx, &mut self.state.physical_world)
+            .update_all_entity(ctx)
             .unwrap();
     }
 

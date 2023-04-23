@@ -1,9 +1,9 @@
 use super::geometry::Transform;
-use crate::scece::game::input::Control;
 use rapier2d::na::{Isometry2, Point2, Rotation2, Vector2};
 use rapier2d::prelude::*;
 use rlua::MetaMethod::Mul;
 use std::f32::consts::PI;
+use std::fmt::{Debug, Formatter, Write};
 use crate::theory::geometry::rotate_vec2;
 
 #[derive(Debug)]
@@ -67,6 +67,18 @@ pub struct PhysicalWorld {
     impulse_joint_set: ImpulseJointSet,
     multibody_joint_set: MultibodyJointSet,
     ccd_solver: CCDSolver,
+}
+
+impl Default for PhysicalWorld {
+    fn default() -> Self {
+        PhysicalWorld::new()
+    }
+}
+
+impl Debug for PhysicalWorld {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<PhysicalWorld: {}>", self.rigidbody_set.len())
+    }
 }
 
 impl PhysicalWorld {

@@ -4,7 +4,6 @@
 pub mod entity;
 pub mod gui;
 pub mod lang;
-pub mod scece;
 pub mod system;
 pub mod theory;
 pub mod traitext;

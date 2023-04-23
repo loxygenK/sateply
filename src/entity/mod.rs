@@ -8,7 +8,7 @@ use crate::system::state::GameState;
 use crate::theory::geometry::Transform;
 use crate::theory::physics::{Physics, PhysicsController, RigidBodyProperty};
 
-mod satellite;
+pub mod satellite;
 
 pub trait Entity {
     fn update(&mut self, ctx: &mut Context) -> GameResult;

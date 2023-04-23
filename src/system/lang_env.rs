@@ -2,25 +2,23 @@ use ggez::{Context, winit::event::VirtualKeyCode, input::keyboard::KeyboardConte
 
 use crate::lang::{ModKey, ProgramEnvironment, api::APIError, ClientError};
 
-macro_rules! generate_keybind {
+macro_rules! match_keycode {
     ( $value: expr => $($key: ident),+ ) => {
-        match $value {
+        (match $value {
             $( stringify!($key) => Some(VirtualKeyCode::$key), )+
             _ => None
-        }
+        })
     }
 }
 
-#[inline]
 fn map_char_to_keycode(key: &str) -> Option<VirtualKeyCode> {
     let key = key.to_uppercase();
     let key = key.as_str();
 
-    let matched = generate_keybind!(
+    if let Some(matched) = match_keycode!(
         key => A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z
-    );
-    if matched.is_some() {
-        return matched;
+    ) {
+        return Some(matched);
     }
 
     match key {
@@ -41,8 +39,6 @@ impl ProgramEnvironment for Environment<'_> {
                 part: "char".to_string(),
                 reason: format!("No such key: {char}")
             })?;
-
-        // dbg!(&keycode, self.keyboard_ctx.is_key_pressed(keycode));
 
         Ok(self.keyboard_ctx.is_key_pressed(keycode))
     }
