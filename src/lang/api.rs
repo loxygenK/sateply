@@ -30,8 +30,9 @@ pub fn boost<T: ProgramClient>(client: &mut T, location: String, power: f32) -> 
         .map_err(|err| APIError::new("boost", err))
 }
 
-pub fn is_pressed<T: ProgramEnvironment>(env: &T, char: String, mods: u8) -> APIResult<bool> {
-    env.is_pressed(&char, ModKey::from_bits(mods).unwrap_or(ModKey::empty()))
+pub fn is_pressed<T: ProgramEnvironment>(env: &T, char: String, mods: Option<u8>) -> APIResult<bool> {
+    dbg!(&char);
+    env.is_pressed(&char, mods.and_then(ModKey::from_bits))
         .map_err(|err| APIError::new("is_pressed", err))
 }
 
