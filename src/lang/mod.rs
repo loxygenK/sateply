@@ -32,5 +32,5 @@ bitflags::bitflags! {
 }
 
 pub trait ProgramEnvironment {
-    fn is_pressed(&self, char: &str, mods: ModKey) -> Result<bool, ClientError>;
+    fn is_pressed(&self, char: &str, mods: Option<ModKey>) -> Result<bool, ClientError>;
 }
