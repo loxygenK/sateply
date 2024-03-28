@@ -6,15 +6,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bitflags = "2.1.0"
-ggez = "0.9.0-rc0"
+bitflags = "2.5.0"
+ggez = "0.9.3"
 ggegui = { git = "https://github.com/loxygenK/ggegui" }
 rand = "0.8.5"
-rapier2d = "0.17.2"
-rlua = "0.19.4"
-thiserror = "1.0.40"
-tokio = { version = "1.27.0", features = ["full"] }
-rfd = "0.11.3"
+rapier2d = "0.18.0"
+rlua = "0.20.0"
+thiserror = "1.0.58"
+tokio = { version = "1.37.0", features = ["full"] }
+rfd = "0.14.1"
 
 [patch.crates-io]
 ggez = { git = 'https://github.com/ggez/ggez.git', branch = "devel"  }
